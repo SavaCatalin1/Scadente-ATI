@@ -37,9 +37,7 @@ function Homepage({ invoices, setInvoices, fetchInvoices }) {
 
   return (
     <div className="page-content">
-      <h2 className="page-title">
-        Facturile scadente ({invoices.length})
-      </h2>
+      <h2 className="page-title">Facturile scadente ({invoices.length})</h2>
       <div>
         <b>Total plata: {totalSum.toFixed(2)} LEI</b>
       </div>
@@ -51,33 +49,35 @@ function Homepage({ invoices, setInvoices, fetchInvoices }) {
         ) : (
           invoices.map((invoice) => (
             <li className="invoice-item" key={invoice.id}>
-              <div className="flex">
-                <div className="item">
-                  <b>
-                    Furnizor:<br></br>
-                  </b>
-                  {invoice.supplier}
-                </div>
-                <div className="item">
-                  <b>Nr. factura:</b> {invoice.invoiceNo}
-                </div>
-                <div className="item">
+              <div>
+                <span className="view">
+                  <b>Furnizor:</b> {invoice.supplier}
+                </span>
+                <span className="view">
+                  <b>Numar factura:</b> {invoice.invoiceNo}
+                </span>
+
+                <span className="view">
                   <b>Data emitere:</b>{" "}
                   {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
-                </div>
-                <div className="item">
+                </span>
+              </div>
+              <div>
+                <span className="view">
+                  <b>Total plata:</b> {invoice.totalSum} LEI
+                </span>
+                {!invoice.paid && (
+                  <div
+                    className="paid-button"
+                    onClick={() => markAsPaid(invoice.id)}
+                  >
+                    Am platit
+                  </div>
+                )}
+                <span className="view">
                   <b>Data scadenta:</b>{" "}
                   {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
-                </div>
-                <div className="item">
-                  <b>Total:</b> {Number(invoice.totalSum).toFixed(2)}
-                </div>
-              </div>
-              <div
-                className="paid-button"
-                onClick={() => markAsPaid(invoice.id)}
-              >
-                Am platit
+                </span>
               </div>
             </li>
           ))

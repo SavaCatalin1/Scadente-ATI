@@ -40,6 +40,7 @@ function Projects() {
         where("project", "==", projectId)
       );
       const querySnapshot = await getDocs(q);
+      
       const invoiceList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -144,7 +145,7 @@ function Projects() {
                           <b>Data scadenta:</b> {paymentDateFormatted}
                         </span>
                       </div>
-                      <div className="delete-flex">
+                      {/* <div className="delete-flex">
                         <span
                           className={`status ${
                             invoice.paid
@@ -157,7 +158,7 @@ function Projects() {
                           <b>Status:</b>{" "}
                           {invoice.paid ? "Platit" : invoice.status}
                         </span>
-                      </div>
+                      </div> */}
                     </li>
                   );
                 })}

@@ -116,10 +116,31 @@ function Invoices({ invoices, fetchInvoices, fetchInvoicesHome }) {
   };
 
   const saveInvoiceChanges = async (invoiceId) => {
+    const originalInvoice = invoices.find(
+      (invoice) => invoice.id === invoiceId
+    );
+
+    // Check if any changes were made to the invoice data
+    const isChanged =
+      invoiceData.supplier !== originalInvoice.supplier ||
+      invoiceData.invoiceNo !== originalInvoice.invoiceNo ||
+      invoiceData.totalSum !== originalInvoice.totalSum ||
+      invoiceData.project !== originalInvoice.project ||
+      moment(invoiceData.issueDate).format("DD-MM-YYYY") !==
+        moment(originalInvoice.issueDate.toDate()).format("DD-MM-YYYY") ||
+      moment(invoiceData.paymentDate).format("DD-MM-YYYY") !==
+        moment(originalInvoice.paymentDate.toDate()).format("DD-MM-YYYY");
+
+    if (!isChanged) {
+      // No changes detected, exit edit mode without updating Firestore
+      setEditingInvoiceId(null);
+      return;
+    }
+
     const invoiceRef = doc(db, "invoices", invoiceId);
 
     try {
-      // Update the invoice fields in Firestore
+      // Update the invoice fields in Firestore only if changes were made
       await updateDoc(invoiceRef, {
         supplier: invoiceData.supplier,
         invoiceNo: invoiceData.invoiceNo,

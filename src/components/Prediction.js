@@ -70,21 +70,27 @@ function Prediction() {
             {predictedInvoices.map((invoice) => (
               <li className="invoice-item" key={invoice.id}>
                 <div>
-                  <b>Furnizor:</b> {invoice.supplier}
+                  <span className="view">
+                    <b>Furnizor:</b> {invoice.supplier}
+                  </span>
+                  <span className="view">
+                    <b>Numar factura:</b> {invoice.invoiceNo}
+                  </span>
+
+                  <span className="view">
+                    <b>Data emitere:</b>{" "}
+                    {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
+                  </span>
                 </div>
                 <div>
-                  <b>Nr. factura:</b> {invoice.invoiceNo}
-                </div>
-                <div>
-                  <b>Data emitere:</b>{" "}
-                  {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
-                </div>
-                <div>
-                  <b>Data scadenta:</b>{" "}
-                  {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
-                </div>
-                <div>
-                  <b>Total:</b> {Number(invoice.totalSum).toFixed(2)} LEI
+                  <span className="view">
+                    <b>Total plata:</b> {invoice.totalSum} LEI
+                  </span>
+
+                  <span className="view">
+                    <b>Data scadenta:</b>{" "}
+                    {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
+                  </span>
                 </div>
               </li>
             ))}
