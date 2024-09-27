@@ -2,6 +2,7 @@ import React from "react";
 import { updateDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import "../styles/Homepage.css";
+import moment from "moment";
 
 function Homepage({ invoices, setInvoices, fetchInvoices }) {
   // Function to mark an invoice as paid
@@ -37,7 +38,7 @@ function Homepage({ invoices, setInvoices, fetchInvoices }) {
   return (
     <div className="page-content">
       <h2 className="page-title">
-        Facturile scadente astazi ({invoices.length})
+        Facturile scadente ({invoices.length})
       </h2>
       <div>
         <b>Total plata: {totalSum.toFixed(2)} LEI</b>
@@ -61,10 +62,12 @@ function Homepage({ invoices, setInvoices, fetchInvoices }) {
                   <b>Nr. factura:</b> {invoice.invoiceNo}
                 </div>
                 <div className="item">
-                  <b>Data emitere:</b> {invoice.issueDate}
+                  <b>Data emitere:</b>{" "}
+                  {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
                 </div>
                 <div className="item">
-                  <b>Data scadenta:</b> {invoice.paymentDate}
+                  <b>Data scadenta:</b>{" "}
+                  {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
                 </div>
                 <div className="item">
                   <b>Total:</b> {Number(invoice.totalSum).toFixed(2)}

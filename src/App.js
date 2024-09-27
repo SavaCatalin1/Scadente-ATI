@@ -9,6 +9,7 @@ import AddInvoice from "./components/AddInvoice";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import moment from "moment";
 import { db } from "./firebase";
+import Prediction from "./components/Prediction";
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,44 +20,54 @@ function App() {
   const closeModal = () => setIsModalOpen(false);
 
   const fetchInvoices = async () => {
-    const querySnapshot = await getDocs(collection(db, "invoices"));
-    const allInvoices = [];
-    querySnapshot.forEach((doc) => {
-      const invoice = { id: doc.id, ...doc.data() };
-      const paymentStatus = moment(invoice.paymentDate, "DD-MM-YYYY").isBefore(
-        moment(),
-        "day"
-      )
-        ? "Scadenta depasita"
-        : moment(invoice.paymentDate, "DD-MM-YYYY").isSame(moment(), "day")
-        ? "Scadenta astazi"
-        : "In termen";
+    try {
+      const querySnapshot = await getDocs(collection(db, "invoices"));
+      const allInvoices = [];
 
-      allInvoices.push({ ...invoice, status: paymentStatus });
-    });
-    setInvoices(allInvoices);
+      querySnapshot.forEach((doc) => {
+        const invoice = { id: doc.id, ...doc.data() };
+
+        // Convert paymentDate (Firestore timestamp) to a JavaScript Date object
+        const paymentDate = invoice.paymentDate.toDate();
+
+        // Determine the payment status based on the current date
+        const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
+          ? "Scadenta depasita"
+          : moment(paymentDate).isSame(moment(), "day")
+          ? "Scadenta astazi"
+          : "In termen";
+
+        // Add invoice with status to the array
+        allInvoices.push({ ...invoice, status: paymentStatus });
+      });
+
+      // Set the invoices state with the fetched and updated invoices
+      setInvoices(allInvoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+    }
   };
 
-  console.log(invoices);
-
   const fetchInvoicesHome = async () => {
-    const today = moment().format("DD-MM-YYYY");
+    // Get today's date as a JavaScript Date object (end of day)
+    const today = moment().endOf("day").toDate();
 
     // Query 1: Fetch unpaid invoices due today
     const todayQuery = query(
       collection(db, "invoices"),
-      where("paymentDate", "==", today),
-      where("paid", "==", false)
+      where("paymentDate", "==", today), // Compare using Date object
+      where("paid", "==", false) // Fetch unpaid invoices
     );
 
     // Query 2: Fetch unpaid invoices with paymentDate before today
     const pastDueQuery = query(
       collection(db, "invoices"),
-      where("paymentDate", "<", today),
-      where("paid", "==", false)
+      where("paymentDate", "<", today), // Compare using Date object
+      where("paid", "==", false) // Fetch unpaid invoices
     );
 
     try {
+      // Run both queries in parallel
       const [todaySnapshot, pastDueSnapshot] = await Promise.all([
         getDocs(todayQuery),
         getDocs(pastDueQuery),
@@ -107,8 +118,11 @@ function App() {
             />
             <Route
               path="/invoices"
-              element={<Invoices invoices={invoices} />}
+              element={
+                <Invoices invoices={invoices} fetchInvoices={fetchInvoices} fetchInvoicesHome={fetchInvoicesHome}/>
+              }
             />
+            <Route path="/prediction" element={<Prediction />} />
           </Routes>
         </div>
         <AddInvoice

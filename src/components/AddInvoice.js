@@ -4,7 +4,6 @@ import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import moment from "moment";
 import "../styles/AddInvoice.css";
 
 function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
@@ -21,19 +20,19 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
         supplier,
         invoiceNo,
         totalSum,
-        issueDate: moment(issueDate).format("DD-MM-YYYY"),
-        paymentDate: moment(paymentDate).format("DD-MM-YYYY"),
-        paid: false,
+        issueDate,  // Store issueDate as a Date object (timestamp)
+        paymentDate,  // Store paymentDate as a Date object (timestamp)
+        paid: false,  // Default unpaid status
       });
       closeModal();
-      fetchInvoices();
-      fetchInvoicesHome();
+      fetchInvoices();  // Refresh invoices
+      fetchInvoicesHome();  // Refresh home invoices
     } catch (error) {
       console.error("Error adding invoice:", error);
     }
   };
 
-  if (!isOpen) return null; // Don't render the modal if it's not open
+  if (!isOpen) return null;  // Don't render the modal if it's not open
 
   return (
     <div className="modal-overlay">

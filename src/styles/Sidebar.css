@@ -7,6 +7,9 @@
   padding: 20px;
   position: fixed;
   align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .sidebar-logo {
@@ -51,4 +54,8 @@
 .sidebar-link:hover,
 .sidebar-button:hover {
   background-color: #34495e;
+}
+
+.add {
+  font-weight: 700;
 }

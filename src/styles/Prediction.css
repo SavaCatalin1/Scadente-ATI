@@ -1,0 +1,58 @@
+/* src/styles/Prediction.css */
+.prediction-page {
+  padding: 20px;
+}
+
+.page-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.date-picker-container {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center; /* Align items vertically in the center */
+  justify-content: space-around;
+  width: 25rem;
+}
+
+.date-picker-container .date-picker {
+  flex-grow: 1; /* Allow the date picker to take up available space */
+}
+
+.fetch-button {
+  margin-left: 10px;
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.fetch-button:hover {
+  background-color: #2980b9;
+}
+
+.total-sum {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.invoice-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.invoice-item {
+  padding: 15px;
+  background-color: #f4f7fc;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.invoice-item div {
+  margin-bottom: 5px;
+}
