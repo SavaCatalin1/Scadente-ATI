@@ -1,0 +1,72 @@
+/* src/components/Homepage.css */
+/* src/components/AllInvoices.css */
+.page-content {
+  margin-left: 6rem;
+  padding: 2rem;
+  background-color: #f4f7fc;
+  min-height: 100vh;
+}
+
+.page-title2 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.invoice-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.invoice-item {
+  background-color: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  padding-inline: 3rem;
+}
+
+.invoice-item span {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.invoice-empty {
+  font-size: 18px;
+  color: #888;
+}
+
+.status {
+  font-weight: bold;
+  padding: 5px;
+  border-radius: 4px;
+  text-align: center;
+  width: 15rem;
+}
+
+/* Yellow for Scadenta astazi */
+.status.scadenta-astazi {
+  background-color: #f1c40f; /* Yellow */
+  color: black;
+}
+
+/* Red for Scadenta depasita */
+.status.scadenta-depasita {
+  background-color: #e74c3c; /* Red */
+  color: white;
+}
+
+/* Green for In termen */
+.status.in-termen {
+  background-color: #9ea7a1; /* Green */
+  color: white;
+}
+
+.status.platit {
+  background-color: #2ecc71; /* Green */
+  color: white;
+}

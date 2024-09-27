@@ -1,0 +1,70 @@
+/* src/components/Homepage.css */
+/* src/components/AllInvoices.css */
+.page-content {
+  margin-left: 6rem;
+  padding: 2rem;
+  background-color: #f4f7fc;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  background-color: #f1c40f; /* Yellow */
+  color: black;
+  margin-bottom: 20px;
+  width: fit-content;
+  padding: 0.5rem;
+  border-radius: 1rem;
+}
+
+.invoice-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.invoice-item {
+  background-color: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+}
+
+.invoice-item span {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.invoice-empty {
+  font-size: 18px;
+  color: #888;
+}
+
+.flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80%;
+}
+
+.paid-button {
+  background-color: rgb(95, 158, 0);
+  color: white;
+  font-weight: 600;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  width: 5rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paid-button:hover {
+  background-color: rgb(69, 114, 2);
+}
+
+.item {
+  width: 7rem;
+}
