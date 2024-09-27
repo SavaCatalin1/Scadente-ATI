@@ -10,6 +10,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import moment from "moment";
 import { db } from "./firebase";
 import Prediction from "./components/Prediction";
+import Notfound from "./components/Notfound";
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -119,10 +120,15 @@ function App() {
             <Route
               path="/invoices"
               element={
-                <Invoices invoices={invoices} fetchInvoices={fetchInvoices} fetchInvoicesHome={fetchInvoicesHome}/>
+                <Invoices
+                  invoices={invoices}
+                  fetchInvoices={fetchInvoices}
+                  fetchInvoicesHome={fetchInvoicesHome}
+                />
               }
             />
             <Route path="/prediction" element={<Prediction />} />
+            <Route path="*" element={<Notfound />} />
           </Routes>
         </div>
         <AddInvoice
