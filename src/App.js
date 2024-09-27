@@ -41,17 +41,43 @@ function App() {
 
   const fetchInvoicesHome = async () => {
     const today = moment().format("DD-MM-YYYY");
-    const q = query(
+
+    // Query 1: Fetch unpaid invoices due today
+    const todayQuery = query(
       collection(db, "invoices"),
       where("paymentDate", "==", today),
-      where("paid", "==", false) // Only fetch unpaid invoices
+      where("paid", "==", false)
     );
-    const querySnapshot = await getDocs(q);
-    const invoicesDue = [];
-    querySnapshot.forEach((doc) => {
-      invoicesDue.push({ id: doc.id, ...doc.data() });
-    });
-    setInvoicesHome(invoicesDue);
+
+    // Query 2: Fetch unpaid invoices with paymentDate before today
+    const pastDueQuery = query(
+      collection(db, "invoices"),
+      where("paymentDate", "<", today),
+      where("paid", "==", false)
+    );
+
+    try {
+      const [todaySnapshot, pastDueSnapshot] = await Promise.all([
+        getDocs(todayQuery),
+        getDocs(pastDueQuery),
+      ]);
+
+      // Combine results from both queries
+      const invoicesDue = [];
+
+      todaySnapshot.forEach((doc) => {
+        invoicesDue.push({ id: doc.id, ...doc.data() });
+      });
+
+      pastDueSnapshot.forEach((doc) => {
+        invoicesDue.push({ id: doc.id, ...doc.data() });
+      });
+
+      // Set the combined invoices in state
+      setInvoicesHome(invoicesDue);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+    }
   };
 
   useEffect(() => {

@@ -6,6 +6,15 @@ import "../styles/Homepage.css";
 function Homepage({ invoices, setInvoices, fetchInvoices }) {
   // Function to mark an invoice as paid
   const markAsPaid = async (invoiceId) => {
+    // Show confirmation prompt
+    const confirmPayment = window.confirm(
+      "Sunteti sigur ca vreti sa marcati ca platit?"
+    );
+
+    if (!confirmPayment) {
+      return; // Exit if the user clicks "Cancel"
+    }
+
     const invoiceRef = doc(db, "invoices", invoiceId);
 
     try {
