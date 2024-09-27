@@ -1,0 +1,91 @@
+.projects-page {
+  padding: 20px;
+}
+
+.page-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.projects-list {
+  margin-bottom: 20px;
+}
+
+.project-item {
+  cursor: pointer;
+  padding: 15px 20px; /* Adjust padding for better spacing */
+  background-color: #f0f4fa; /* Softer background color */
+  margin-bottom: 10px; /* Add more space between items */
+  border-radius: 8px; /* More rounded corners */
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center; /* Vertically center content */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition */
+  border-left: 5px solid #3498db; /* Accent color for the left border */
+}
+
+.project-item:hover {
+  background-color: #e4eaf5; /* Slightly darker background on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+.project-item-text {
+  flex: 1; /* Ensure the text takes up available space */
+}
+
+.project-item-icon {
+  margin-right: 10px; /* Add space between text and icon */
+}
+
+.invoices-section {
+  margin-top: 20px;
+}
+
+.invoice-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.invoice-item {
+  padding: 15px;
+  background-color: #f4f7fc;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.projects-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.add-project-button {
+  height: 2rem;
+}
+
+.text {
+  font-size: 1.2rem;
+}
+
+.selected {
+  cursor: pointer;
+  padding: 15px 20px; /* Adjust padding for better spacing */
+  background-color: #a7a7a7; /* Softer background color */
+  margin-bottom: 10px; /* Add more space between items */
+  border-radius: 8px; /* More rounded corners */
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center; /* Vertically center content */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition */
+  border-left: 5px solid #3498db; /* Accent color for the left border */
+}
+
+.selected:hover {
+  background-color: #8d8d8d; /* Slightly darker background on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}

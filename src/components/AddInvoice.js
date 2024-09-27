@@ -1,6 +1,5 @@
-// src/components/AddInvoiceModal.js
-import React, { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -12,6 +11,28 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
   const [totalSum, setTotalSum] = useState(0);
   const [issueDate, setIssueDate] = useState(new Date());
   const [paymentDate, setPaymentDate] = useState(new Date());
+  const [projects, setProjects] = useState([]); // Store projects fetched from Firestore
+  const [selectedProject, setSelectedProject] = useState(""); // Selected project
+
+  useEffect(() => {
+    // Fetch the list of projects from Firestore when the modal is opened
+    const fetchProjects = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "projects"));
+        const projectList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProjects(projectList);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    };
+
+    if (isOpen) {
+      fetchProjects(); // Only fetch projects when the modal is opened
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,19 +41,20 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
         supplier,
         invoiceNo,
         totalSum,
-        issueDate,  // Store issueDate as a Date object (timestamp)
-        paymentDate,  // Store paymentDate as a Date object (timestamp)
-        paid: false,  // Default unpaid status
+        issueDate, // Store issueDate as a Date object (timestamp)
+        paymentDate, // Store paymentDate as a Date object (timestamp)
+        project: selectedProject, // Include the selected project
+        paid: false, // Default unpaid status
       });
       closeModal();
-      fetchInvoices();  // Refresh invoices
-      fetchInvoicesHome();  // Refresh home invoices
+      fetchInvoices(); // Refresh invoices
+      fetchInvoicesHome(); // Refresh home invoices
     } catch (error) {
       console.error("Error adding invoice:", error);
     }
   };
 
-  if (!isOpen) return null;  // Don't render the modal if it's not open
+  if (!isOpen) return null; // Don't render the modal if it's not open
 
   return (
     <div className="modal-overlay">
@@ -77,6 +99,24 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
             onChange={setPaymentDate}
             className="modal-datepicker"
           />
+
+          <label className="modal-label">Proiect</label>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            required
+            className="modal-input"
+          >
+            <option value="" disabled hidden>
+              Selecteaza un proiect
+            </option>
+            <option value=""></option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
 
           <button type="submit" className="modal-submit">
             Adauga factura

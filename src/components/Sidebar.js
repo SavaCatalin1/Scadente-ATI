@@ -21,6 +21,11 @@ function Sidebar({ openModal }) {
             </Link>
           </li>
           <li className="sidebar-item">
+            <Link to="/projects" className="sidebar-link">
+              Proiecte
+            </Link>
+          </li>
+          <li className="sidebar-item">
             <Link to="/invoices" className="sidebar-link">
               Toate facturile
             </Link>

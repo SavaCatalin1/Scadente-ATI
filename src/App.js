@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
@@ -11,24 +10,43 @@ import moment from "moment";
 import { db } from "./firebase";
 import Prediction from "./components/Prediction";
 import Notfound from "./components/Notfound";
+import Projects from "./components/Projects";
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [invoicesHome, setInvoicesHome] = useState([]);
+  const [projects, setProjects] = useState({}); // Store projects as a map
+  const [projectsLoaded, setProjectsLoaded] = useState(false); // Flag to track if projects have been fetched
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  // Fetch all projects and store them as a map
+  const fetchProjects = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "projects"));
+      const projectsMap = {};
+      querySnapshot.forEach((doc) => {
+        projectsMap[doc.id] = doc.data().name; // Map project ID to project name
+      });
+      setProjects(projectsMap); // Set the projects in state
+      setProjectsLoaded(true); // Indicate that projects have been fetched
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+
+  // Fetch all invoices and link projects
   const fetchInvoices = async () => {
+    if (!projectsLoaded) return; // Ensure projects are loaded before fetching invoices
+
     try {
       const querySnapshot = await getDocs(collection(db, "invoices"));
       const allInvoices = [];
 
       querySnapshot.forEach((doc) => {
         const invoice = { id: doc.id, ...doc.data() };
-
-        // Convert paymentDate (Firestore timestamp) to a JavaScript Date object
         const paymentDate = invoice.paymentDate.toDate();
 
         // Determine the payment status based on the current date
@@ -38,8 +56,11 @@ function App() {
           ? "Scadenta astazi"
           : "In termen";
 
-        // Add invoice with status to the array
-        allInvoices.push({ ...invoice, status: paymentStatus });
+        // Link project name to the invoice
+        const projectName = projects[invoice.project] || "N/A"; // Fetch project name by project ID
+
+        // Add invoice with status and linked project name
+        allInvoices.push({ ...invoice, status: paymentStatus, projectName });
       });
 
       // Set the invoices state with the fetched and updated invoices
@@ -50,52 +71,60 @@ function App() {
   };
 
   const fetchInvoicesHome = async () => {
-    // Get today's date as a JavaScript Date object (end of day)
+    if (!projectsLoaded) return; // Ensure projects are loaded before fetching invoices
+
     const today = moment().endOf("day").toDate();
 
-    // Query 1: Fetch unpaid invoices due today
     const todayQuery = query(
       collection(db, "invoices"),
-      where("paymentDate", "==", today), // Compare using Date object
-      where("paid", "==", false) // Fetch unpaid invoices
+      where("paymentDate", "==", today),
+      where("paid", "==", false)
     );
 
-    // Query 2: Fetch unpaid invoices with paymentDate before today
     const pastDueQuery = query(
       collection(db, "invoices"),
-      where("paymentDate", "<", today), // Compare using Date object
-      where("paid", "==", false) // Fetch unpaid invoices
+      where("paymentDate", "<", today),
+      where("paid", "==", false)
     );
 
     try {
-      // Run both queries in parallel
       const [todaySnapshot, pastDueSnapshot] = await Promise.all([
         getDocs(todayQuery),
         getDocs(pastDueQuery),
       ]);
 
-      // Combine results from both queries
       const invoicesDue = [];
 
       todaySnapshot.forEach((doc) => {
-        invoicesDue.push({ id: doc.id, ...doc.data() });
+        const invoice = { id: doc.id, ...doc.data() };
+        const projectName = projects[invoice.project] || "N/A"; // Link project name
+        invoicesDue.push({ ...invoice, projectName });
       });
 
       pastDueSnapshot.forEach((doc) => {
-        invoicesDue.push({ id: doc.id, ...doc.data() });
+        const invoice = { id: doc.id, ...doc.data() };
+        const projectName = projects[invoice.project] || "N/A"; // Link project name
+        invoicesDue.push({ ...invoice, projectName });
       });
 
-      // Set the combined invoices in state
       setInvoicesHome(invoicesDue);
     } catch (error) {
       console.error("Error fetching invoices:", error);
     }
   };
 
+  // Fetch projects first, then fetch invoices once projects are loaded
   useEffect(() => {
-    fetchInvoices();
-    fetchInvoicesHome();
+    fetchProjects();
   }, []);
+
+  // Fetch invoices after projects have been loaded
+  useEffect(() => {
+    if (projectsLoaded) {
+      fetchInvoices();
+      fetchInvoicesHome();
+    }
+  }, [projectsLoaded]); // Trigger when projects are loaded
 
   useEffect(() => {
     console.log(invoices);
@@ -128,6 +157,7 @@ function App() {
               }
             />
             <Route path="/prediction" element={<Prediction />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="*" element={<Notfound />} />
           </Routes>
         </div>

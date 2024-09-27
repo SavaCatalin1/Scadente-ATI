@@ -1,103 +1,197 @@
-/* src/components/Homepage.css */
-/* src/components/AllInvoices.css */
+/* General Page Styling */
 .page-content {
-  margin-left: 6rem;
-  padding: 2rem;
-  background-color: #f4f7fc;
-  min-height: 100vh;
+  padding: 20px;
 }
 
-.page-title2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
+.invoices-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
+.page-title2 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Supplier filter input */
+.supplier-flex {
+  display: flex;
+  align-items: center;
+}
+
+.supplier-text {
+  margin-right: 10px;
+}
+
+.supplier-input {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.align-right {
+  text-align: right;
+  font-weight: bold;
+}
+
+/* Invoices List */
 .invoice-list {
   list-style-type: none;
   padding: 0;
 }
 
 .invoice-item {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 15px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+.invoice-item:hover {
+  background-color: #eef4ff;
+}
+
+.invoice-item div {
   display: flex;
   justify-content: space-between;
-  padding-inline: 3rem;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-left: 0.5rem;
 }
 
-.invoice-item span {
+.invoice-item label {
   display: block;
   margin-bottom: 5px;
-}
-
-.invoice-empty {
-  font-size: 18px;
-  color: #888;
-}
-
-.status {
   font-weight: bold;
-  padding: 5px;
-  border-radius: 4px;
-  text-align: center;
-  width: 15rem;
 }
 
-/* Yellow for Scadenta astazi */
-.status.scadenta-astazi {
-  background-color: #f1c40f; /* Yellow */
-  color: black;
-}
-
-/* Red for Scadenta depasita */
-.status.scadenta-depasita {
-  background-color: #e74c3c; /* Red */
+/* Buttons */
+.save-button,
+.edit-button {
+  padding: 6px 12px;
+  background-color: #3498db;
   color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
-/* Green for In termen */
-.status.in-termen {
-  background-color: #9ea7a1; /* Green */
+.paid-button:hover,
+.save-button:hover,
+.edit-button:hover {
+  background-color: #2980b9;
+}
+
+/* Edit/Delete Icons */
+.delete-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.delete-icon,
+.edit-icon {
+  cursor: pointer;
+  margin-left: 15px;
+}
+
+.delete-icon:hover,
+.edit-icon:hover {
+  color: #e74c3c;
+}
+
+/* Edit Mode */
+.invoice-item input,
+.invoice-item select {
+  width: calc(100% - 15px);
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.invoice-item select {
+  background-color: white;
+  cursor: pointer;
+}
+
+/* Date Picker Styles */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container {
+  display: block;
+}
+
+.react-datepicker__input-container input {
+  width: calc(100% - 15px);
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Status Colors */
+.status {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
   color: white;
 }
 
 .status.platit {
-  background-color: #2ecc71; /* Green */
-  color: white;
+  background-color: #2ecc71;
 }
 
-.supplier-flex{
+.status.scadenta-astazi {
+  background-color: #f1c40f;
+}
+
+.status.scadenta-depasita {
+  background-color: #e74c3c;
+}
+
+.status.in-termen {
+  background-color: #3498db;
+}
+
+/* Save Button */
+.save-button {
+  margin-top: 10px;
+  background-color: #2ecc71;
+}
+
+.save-button:hover {
+  background-color: #27ae60;
+}
+
+/* Button Container for Save */
+.button-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
-.invoices-flex{
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.supplier-text{
-  margin-right: .4rem;
-  font-weight: bold;
-}
-
-.width{
-  width: 33%;
-}
-
-.align-right{
-  text-align: end;
-}
-
-.delete-flex{
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
+.pointer {
   cursor: pointer;
+}
+
+.view {
+  width: 15rem;
+}
+.tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+  margin-right: 0;
 }
