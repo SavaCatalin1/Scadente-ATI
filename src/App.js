@@ -126,10 +126,6 @@ function App() {
     }
   }, [projectsLoaded]); // Trigger when projects are loaded
 
-  useEffect(() => {
-    console.log(invoices);
-  }, [invoices]);
-
   return (
     <Router>
       <div className="app-container">
@@ -143,6 +139,7 @@ function App() {
                   invoices={invoicesHome}
                   setInvoices={setInvoicesHome}
                   fetchInvoices={fetchInvoices}
+                  fetchInvoicesHome={fetchInvoicesHome}
                 />
               }
             />
@@ -150,14 +147,34 @@ function App() {
               path="/invoices"
               element={
                 <Invoices
+                  projects={Object.entries(projects)}
+                  fetchProjects={fetchProjects}
                   invoices={invoices}
                   fetchInvoices={fetchInvoices}
                   fetchInvoicesHome={fetchInvoicesHome}
                 />
               }
             />
-            <Route path="/prediction" element={<Prediction />} />
-            <Route path="/projects" element={<Projects />} />
+            <Route
+              path="/prediction"
+              element={
+                <Prediction
+                  projects={projects}
+                  fetchProjects={fetchProjects}
+                  fetchInvoices={fetchInvoices}
+                  fetchInvoicesHome={fetchInvoicesHome}
+                />
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <Projects
+                  projects={Object.entries(projects)}
+                  fetchProjects={fetchProjects}
+                />
+              }
+            />
             <Route path="*" element={<Notfound />} />
           </Routes>
         </div>

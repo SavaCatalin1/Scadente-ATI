@@ -1,21 +1,31 @@
 // src/components/Prediction.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import moment from "moment";
 import "../styles/Prediction.css";
+import InvoiceItem from "./InvoiceItem";
 
-function Prediction() {
+function Prediction({
+  projects,
+  fetchProjects,
+  fetchInvoices,
+  fetchInvoicesHome,
+}) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [predictedInvoices, setPredictedInvoices] = useState([]);
   const [totalSum, setTotalSum] = useState(0);
 
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  // Fetch invoices up to the selected date and link with project names
   const fetchPredictedInvoices = async () => {
     if (!selectedDate) return;
 
-    // Convert the selected date to the end of the day
     const selectedDateEndOfDay = moment(selectedDate).endOf("day").toDate();
 
     const invoicesQuery = query(
@@ -31,7 +41,9 @@ function Prediction() {
 
       invoicesSnapshot.forEach((doc) => {
         const invoice = { id: doc.id, ...doc.data() };
-        invoicesData.push(invoice);
+        // Link project name to the invoice
+        const projectName = projects[invoice.project] || "N/A";
+        invoicesData.push({ ...invoice, projectName }); // Add project name to invoice
         sum += Number(invoice.totalSum); // Sum up the totalSum of each invoice
       });
 
@@ -68,31 +80,13 @@ function Prediction() {
           </div>
           <ul className="invoice-list">
             {predictedInvoices.map((invoice) => (
-              <li className="invoice-item" key={invoice.id}>
-                <div>
-                  <span className="view">
-                    <b>Furnizor:</b> {invoice.supplier}
-                  </span>
-                  <span className="view">
-                    <b>Numar factura:</b> {invoice.invoiceNo}
-                  </span>
-
-                  <span className="view">
-                    <b>Data emitere:</b>{" "}
-                    {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
-                  </span>
-                </div>
-                <div>
-                  <span className="view">
-                    <b>Total plata:</b> {invoice.totalSum} LEI
-                  </span>
-
-                  <span className="view">
-                    <b>Data scadenta:</b>{" "}
-                    {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
-                  </span>
-                </div>
-              </li>
+              <InvoiceItem
+                key={invoice.id}
+                invoice={invoice}
+                fetchInvoices={fetchInvoices}
+                fetchInvoicesHome={fetchInvoicesHome}
+                fetchPredictedInvoices={fetchPredictedInvoices}
+              />
             ))}
           </ul>
         </>

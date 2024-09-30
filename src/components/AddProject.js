@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import "../styles/AddProjectModal.css";
@@ -20,11 +20,18 @@ function AddProjectModal({ isOpen, closeModal, fetchProjects }) {
       });
       closeModal();
       fetchProjects();
-      setProjectName(null); // Refresh the projects list after adding a new project
+      setProjectName(""); // Reset the input after adding a new project
     } catch (error) {
       console.error("Error adding project:", error);
     }
   };
+
+  // Reset the projectName when the modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setProjectName(""); // Clear input when modal is closed
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null; // Don't render if the modal is closed
 

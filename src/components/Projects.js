@@ -4,29 +4,20 @@ import { db } from "../firebase";
 import moment from "moment";
 import "../styles/Projects.css";
 import AddProjectModal from "./AddProject"; // Import the modal
+import InvoiceItem from "./InvoiceItem"; // Import InvoiceItem
 
-function Projects() {
-  const [projects, setProjects] = useState([]);
+function Projects({
+  projects,
+  fetchProjects,
+  fetchInvoices,
+  fetchInvoicesHome,
+}) {
   const [selectedProject, setSelectedProject] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false); // Manage modal state
   const [totalSum, setTotalSum] = useState(0); // Total sum of all invoices
   const [unpaidTotalSum, setUnpaidTotalSum] = useState(0); // Total sum of unpaid invoices
   const [showProjects, setShowProjects] = useState(true); // State to show/hide projects
-
-  // Fetch all projects from Firestore
-  const fetchProjects = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "projects"));
-      const projectList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setProjects(projectList);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-    }
-  };
 
   useEffect(() => {
     fetchProjects();
@@ -36,16 +27,24 @@ function Projects() {
   const fetchInvoicesForProject = async (projectId) => {
     setSelectedProject(projectId);
     setShowProjects(false); // Hide the projects list when a project is selected
+
     try {
+      // Query for fetching invoices linked to the selected project
       const q = query(
         collection(db, "invoices"),
         where("project", "==", projectId)
       );
       const querySnapshot = await getDocs(q);
 
+      // Fetch the project name from the project map or database
+      const project = projects.find(([id]) => id === projectId); // Assuming projects is an array of [projectId, projectName]
+      const projectName = project ? project[1] : "Unknown Project"; // Get the project name, default to "Unknown Project"
+
+      // Map over invoices and add project name to each invoice
       const invoiceList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
+        projectName, // Attach the project name to each invoice
       }));
 
       setInvoices(invoiceList);
@@ -76,8 +75,8 @@ function Projects() {
 
   // Get the name of the selected project
   const getSelectedProjectName = () => {
-    const project = projects.find((p) => p.id === selectedProject);
-    return project ? project.name : "";
+    const project = projects.find(([id]) => id === selectedProject); // Use array destructuring for [id, name]
+    return project ? project[1] : ""; // Return project name
   };
 
   return (
@@ -108,16 +107,16 @@ function Projects() {
       {showProjects && (
         <div className="projects-list">
           <ul>
-            {projects.map((project) => (
+            {projects?.map(([projectId, projectName]) => (
               <li
-                key={project.id}
+                key={projectId}
                 className={` ${
-                  project.id === selectedProject ? "selected" : "project-item"
+                  projectId === selectedProject ? "selected" : "project-item"
                 }`}
-                onClick={() => fetchInvoicesForProject(project.id)}
+                onClick={() => fetchInvoicesForProject(projectId)}
               >
                 <span className="project-item-icon">📁</span>
-                {project.name}
+                {projectName}
               </li>
             ))}
           </ul>
@@ -154,27 +153,13 @@ function Projects() {
                   ).format("DD-MM-YYYY");
 
                   return (
-                    <li key={invoice.id} className="invoice-item">
-                      <div>
-                        <span className="view">
-                          <b>Furnizor:</b> {invoice.supplier}
-                        </span>
-                        <span className="view">
-                          <b>Numar factura:</b> {invoice.invoiceNo}
-                        </span>
-                        <span className="view">
-                          <b>Data emitere:</b> {issueDateFormatted}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="view">
-                          <b>Total plata:</b> {invoice.totalSum} LEI
-                        </span>
-                        <span className="view">
-                          <b>Data scadenta:</b> {paymentDateFormatted}
-                        </span>
-                      </div>
-                    </li>
+                    <InvoiceItem
+                      key={invoice.id}
+                      invoice={invoice}
+                      projects={projects}
+                      fetchInvoices={fetchInvoices}
+                      fetchInvoicesHome={fetchInvoicesHome}
+                    />
                   );
                 })}
               </ul>
