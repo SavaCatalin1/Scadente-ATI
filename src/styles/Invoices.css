@@ -57,7 +57,7 @@
   background-color: #eef4ff;
 }
 
-.invoice-item div {
+.invitm-div {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -125,24 +125,6 @@
   cursor: pointer;
 }
 
-/* Date Picker Styles */
-.react-datepicker-wrapper {
-  width: 100%;
-}
-
-.react-datepicker__input-container {
-  display: block;
-}
-
-.react-datepicker__input-container input {
-  width: calc(100% - 15px);
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
 /* Status Colors */
 .status {
   padding: 5px 10px;
@@ -196,4 +178,8 @@
   justify-content: flex-end;
   margin-left: auto;
   margin-right: 0;
+}
+
+.mr {
+  margin-right: 1rem;
 }

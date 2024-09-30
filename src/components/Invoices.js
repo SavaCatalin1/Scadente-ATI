@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Invoices.css";
-import { getDocs, collection, deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import InvoiceItem from "./InvoiceItem"; // Import InvoiceItem
 
@@ -72,6 +72,7 @@ function Invoices({
             key={invoice.id}
             invoice={invoice}
             projects={projects}
+            fetchProjects={fetchProjects}
             fetchInvoices={fetchInvoices}
             fetchInvoicesHome={fetchInvoicesHome}
             deleteInvoice={deleteInvoice}

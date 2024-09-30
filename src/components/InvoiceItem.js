@@ -2,15 +2,18 @@ import { useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import moment from "moment";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import "react-datepicker/dist/react-datepicker.css"
 import { db } from "../firebase";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import HistoryIcon from "@mui/icons-material/History";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 const InvoiceItem = ({
   invoice,
   projects,
+  fetchProjects,
   fetchInvoices,
   fetchInvoicesHome,
   fetchPredictedInvoices,
@@ -91,7 +94,7 @@ const InvoiceItem = ({
       {isEditing ? (
         <>
           {/* Edit Mode */}
-          <div>
+          <div className="invitm-div">
             <label>
               <b>Furnizor:</b>
               <input
@@ -127,15 +130,15 @@ const InvoiceItem = ({
                   Selecteaza un proiect
                 </option>
                 {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
+                  <option key={project[0]} value={project[0]}>
+                    {project[1]}
                   </option>
                 ))}
               </select>
             </label>
           </div>
 
-          <div>
+          <div className="invitm-div">
             <label>
               <b>Data emitere:</b>
               <DatePicker
@@ -155,12 +158,17 @@ const InvoiceItem = ({
             </label>
           </div>
 
-          <button onClick={saveInvoiceChanges}>Salveaza</button>
+          <button onClick={saveInvoiceChanges} className="save-button mr">
+            Salveaza
+          </button>
+          <button onClick={() => setIsEditing(false)} className="save-button">
+            Anuleaza
+          </button>
         </>
       ) : (
         <>
           {/* View Mode */}
-          <div>
+          <div className="invitm-div">
             <span className="view">
               <b>Furnizor:</b> {invoice.supplier}
             </span>
@@ -171,7 +179,7 @@ const InvoiceItem = ({
               <b>Proiect:</b> {invoice.projectName || "N/A"}
             </span>
           </div>
-          <div>
+          <div className="invitm-div">
             <span className="view">
               <b>Data emitere:</b>{" "}
               {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
@@ -184,7 +192,7 @@ const InvoiceItem = ({
               {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
             </span>
           </div>
-          <div className="delete-flex">
+          <div className="delete-flex invitm-div">
             {invoice.status && (
               <span
                 className={`status ${
@@ -197,7 +205,7 @@ const InvoiceItem = ({
               </span>
             )}
 
-            <div className="tools">
+            <div className="tools invitm-div">
               {!invoice.paid && (
                 <div
                   className="paid-button"
@@ -207,7 +215,7 @@ const InvoiceItem = ({
                 </div>
               )}
               {invoice.status && deleteInvoice && (
-                <div>
+                <div className="invitm-div">
                   <EditIcon
                     onClick={() => setIsEditing(true)}
                     className="pointer"
