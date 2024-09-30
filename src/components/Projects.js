@@ -12,6 +12,7 @@ function Projects() {
   const [isModalOpen, setIsModalOpen] = useState(false); // Manage modal state
   const [totalSum, setTotalSum] = useState(0); // Total sum of all invoices
   const [unpaidTotalSum, setUnpaidTotalSum] = useState(0); // Total sum of unpaid invoices
+  const [showProjects, setShowProjects] = useState(true); // State to show/hide projects
 
   // Fetch all projects from Firestore
   const fetchProjects = async () => {
@@ -34,13 +35,14 @@ function Projects() {
   // Fetch all invoices for the selected project
   const fetchInvoicesForProject = async (projectId) => {
     setSelectedProject(projectId);
+    setShowProjects(false); // Hide the projects list when a project is selected
     try {
       const q = query(
         collection(db, "invoices"),
         where("project", "==", projectId)
       );
       const querySnapshot = await getDocs(q);
-      
+
       const invoiceList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -69,6 +71,15 @@ function Projects() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  // Toggle the visibility of the project list
+  const toggleProjects = () => setShowProjects(!showProjects);
+
+  // Get the name of the selected project
+  const getSelectedProjectName = () => {
+    const project = projects.find((p) => p.id === selectedProject);
+    return project ? project.name : "";
+  };
+
   return (
     <div className="page-content">
       <div className="projects-header-flex">
@@ -78,22 +89,40 @@ function Projects() {
         </button>
       </div>
 
-      <div className="projects-list">
-        <ul>
-          {projects.map((project) => (
-            <li
-              key={project.id}
-              className={` ${
-                project.id === selectedProject ? "selected" : "project-item"
-              }`}
-              onClick={() => fetchInvoicesForProject(project.id)}
-            >
-              <span className="project-item-icon">📁</span>
-              {project.name}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Show the selected project name when the project is selected */}
+      {selectedProject && !showProjects && (
+        <div className={`selected`}>
+          <span className="project-item-icon">📁</span>
+          {getSelectedProjectName()}
+        </div>
+      )}
+
+      {/* Button to toggle the projects list visibility */}
+      {!showProjects && (
+        <button className="toggle-projects-button" onClick={toggleProjects}>
+          Arata Proiectele
+        </button>
+      )}
+
+      {/* Conditionally render the projects list */}
+      {showProjects && (
+        <div className="projects-list">
+          <ul>
+            {projects.map((project) => (
+              <li
+                key={project.id}
+                className={` ${
+                  project.id === selectedProject ? "selected" : "project-item"
+                }`}
+                onClick={() => fetchInvoicesForProject(project.id)}
+              >
+                <span className="project-item-icon">📁</span>
+                {project.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="invoices-section">
         {selectedProject && (
@@ -145,20 +174,6 @@ function Projects() {
                           <b>Data scadenta:</b> {paymentDateFormatted}
                         </span>
                       </div>
-                      {/* <div className="delete-flex">
-                        <span
-                          className={`status ${
-                            invoice.paid
-                              ? "platit"
-                              : invoice.status
-                                  .replace(/\s+/g, "-")
-                                  .toLowerCase()
-                          }`}
-                        >
-                          <b>Status:</b>{" "}
-                          {invoice.paid ? "Platit" : invoice.status}
-                        </span>
-                      </div> */}
                     </li>
                   );
                 })}

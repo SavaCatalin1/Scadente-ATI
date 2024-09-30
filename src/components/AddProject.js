@@ -19,7 +19,8 @@ function AddProjectModal({ isOpen, closeModal, fetchProjects }) {
         name: projectName.trim(),
       });
       closeModal();
-      fetchProjects(); // Refresh the projects list after adding a new project
+      fetchProjects();
+      setProjectName(null); // Refresh the projects list after adding a new project
     } catch (error) {
       console.error("Error adding project:", error);
     }
