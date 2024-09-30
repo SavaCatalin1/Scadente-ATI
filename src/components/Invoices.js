@@ -53,7 +53,9 @@ function Invoices({
       <div className="invoices-flex">
         <div className="page-title2 width">Toate facturile</div>
         <div className="supplier-flex width">
-          <span className="supplier-text">Furnizor: </span>
+          <span className="supplier-text">
+            <b>Furnizor:</b>{" "}
+          </span>
           <input
             className="supplier-input"
             value={supplierFilter}

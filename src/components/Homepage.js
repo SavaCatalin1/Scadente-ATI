@@ -10,9 +10,11 @@ function Homepage({ invoices, setInvoices, fetchInvoices, fetchInvoicesHome }) {
 
   return (
     <div className="page-content">
-      <h2 className="page-title">Facturile scadente ({invoices.length})</h2>
-      <div>
-        <b>Total plata: {totalSum.toFixed(2)} LEI</b>
+      <div className="invoices-flex">
+        <h2 className="page-title">Facturile scadente ({invoices.length})</h2>
+        <div className="width align-right">
+          <b>De plata:</b> {totalSum.toFixed(2)} LEI
+        </div>
       </div>
       <ul className="invoice-list">
         {invoices.length === 0 ? (

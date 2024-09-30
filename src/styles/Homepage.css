@@ -1,10 +1,10 @@
 /* src/components/Homepage.css */
 /* src/components/AllInvoices.css */
 .page-content {
-  margin-left: 6rem;
+  margin-left: 3rem;
   padding: 2rem;
   background-color: #f4f7fc;
-  min-height: 85vh;
+  min-height: 80vh;
 }
 
 .page-title {
@@ -12,7 +12,7 @@
   font-weight: 600;
   background-color: #f1c40f; /* Yellow */
   color: black;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   width: fit-content;
   padding: 0.5rem;
   border-radius: 1rem;

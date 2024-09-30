@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { db } from "../firebase";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import HistoryIcon from "@mui/icons-material/History";
 
 const InvoiceItem = ({
   invoice,
@@ -34,6 +35,23 @@ const InvoiceItem = ({
     const invoiceRef = doc(db, "invoices", invoiceId);
     try {
       await updateDoc(invoiceRef, { paid: true });
+      fetchInvoices();
+      fetchInvoicesHome();
+      if (fetchPredictedInvoices) fetchPredictedInvoices();
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+    }
+  };
+
+  const markAsUnpaid = async (invoiceId) => {
+    const confirmPayment = window.confirm(
+      "Sunteti sigur ca vreti sa marcati ca neplatit?"
+    );
+    if (!confirmPayment) return;
+
+    const invoiceRef = doc(db, "invoices", invoiceId);
+    try {
+      await updateDoc(invoiceRef, { paid: false });
       fetchInvoices();
       fetchInvoicesHome();
       if (fetchPredictedInvoices) fetchPredictedInvoices();
@@ -190,8 +208,20 @@ const InvoiceItem = ({
               )}
               {invoice.status && deleteInvoice && (
                 <div>
-                  <EditIcon onClick={() => setIsEditing(true)} />
-                  <DeleteIcon onClick={() => deleteInvoice(invoice.id)} />
+                  <EditIcon
+                    onClick={() => setIsEditing(true)}
+                    className="pointer"
+                  />
+                  {invoice.paid && (
+                    <HistoryIcon
+                      onClick={() => markAsUnpaid(invoice.id)}
+                      className="pointer"
+                    />
+                  )}
+                  <DeleteIcon
+                    onClick={() => deleteInvoice(invoice.id)}
+                    className="pointer"
+                  />
                 </div>
               )}
             </div>
