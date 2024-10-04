@@ -36,7 +36,22 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if an invoice with the same invoiceNo exists
     try {
+      const invoicesSnapshot = await getDocs(collection(db, "invoices"));
+
+      // Check if an invoice with the same invoiceNo exists in the fetched invoices
+      const existingInvoice = invoicesSnapshot.docs.find(
+        (doc) => doc.data().invoiceNo === invoiceNo
+      );
+
+      if (existingInvoice) {
+        alert("O factura cu acest numar de factura exista deja."); // Alert the user
+        return; // Stop form submission if the invoice already exists
+      }
+
+      // If the invoiceNo is unique, proceed with adding the new invoice
       await addDoc(collection(db, "invoices"), {
         supplier,
         invoiceNo,
@@ -46,9 +61,15 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
         project: selectedProject, // Include the selected project
         paid: false, // Default unpaid status
       });
+
+      // Reset the form after successful submission
       closeModal();
       fetchInvoices(); // Refresh invoices
       fetchInvoicesHome(); // Refresh home invoices
+      setSupplier("");
+      setInvoiceNo("");
+      setTotalSum(0);
+      setSelectedProject("");
     } catch (error) {
       console.error("Error adding invoice:", error);
     }
@@ -104,7 +125,6 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            required
             className="modal-input"
           >
             <option value="" disabled hidden>
