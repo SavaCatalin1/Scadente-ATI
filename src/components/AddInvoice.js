@@ -13,6 +13,7 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
   const [paymentDate, setPaymentDate] = useState(new Date());
   const [projects, setProjects] = useState([]); // Store projects fetched from Firestore
   const [selectedProject, setSelectedProject] = useState(""); // Selected project
+  const [loading, setLoading] = useState(false); // Loading state to prevent double submission
 
   useEffect(() => {
     // Fetch the list of projects from Firestore when the modal is opened
@@ -37,6 +38,9 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Set loading to true to prevent duplicate submission
+    setLoading(true);
+
     // Check if an invoice with the same invoiceNo exists
     try {
       const invoicesSnapshot = await getDocs(collection(db, "invoices"));
@@ -48,6 +52,7 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
 
       if (existingInvoice) {
         alert("O factura cu acest numar de factura exista deja."); // Alert the user
+        setLoading(false); // Reset loading state if duplicate found
         return; // Stop form submission if the invoice already exists
       }
 
@@ -72,6 +77,8 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
       setSelectedProject("");
     } catch (error) {
       console.error("Error adding invoice:", error);
+    } finally {
+      setLoading(false); // Reset loading state after submission completes
     }
   };
 
@@ -138,8 +145,13 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
             ))}
           </select>
 
-          <button type="submit" className="modal-submit">
-            Adauga factura
+          <button
+            type="submit"
+            className="modal-submit"
+            disabled={loading} // Disable button while loading
+          >
+            {loading ? "Adaugare..." : "Adauga factura"}{" "}
+            {/* Show loading text */}
           </button>
         </form>
         <button className="modal-close" onClick={closeModal}>

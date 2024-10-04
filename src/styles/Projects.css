@@ -70,6 +70,11 @@
   font-size: 1.2rem;
 }
 
+.da {
+  display: flex;
+  justify-content: end;
+}
+
 .selected {
   cursor: pointer;
   padding: 15px 20px; /* Adjust padding for better spacing */
@@ -78,11 +83,12 @@
   border-radius: 8px; /* More rounded corners */
   font-weight: 600;
   font-size: 1.1rem;
-  display: flex;
-  align-items: center; /* Vertically center content */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
   transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition */
   border-left: 5px solid #3498db; /* Accent color for the left border */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .selected:hover {
@@ -103,4 +109,8 @@
 
 .toggle-projects-button:hover {
   background-color: #2980b9;
+}
+
+.ml {
+  margin-left: 1rem;
 }

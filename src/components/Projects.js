@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import moment from "moment";
 import "../styles/Projects.css";
-import AddProjectModal from "./AddProject"; // Import the modal
-import InvoiceItem from "./InvoiceItem"; // Import InvoiceItem
+import AddProjectModal from "./AddProject";
+import InvoiceItem from "./InvoiceItem";
 
 function Projects({
   projects,
@@ -14,10 +21,12 @@ function Projects({
 }) {
   const [selectedProject, setSelectedProject] = useState(null);
   const [invoices, setInvoices] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Manage modal state
-  const [totalSum, setTotalSum] = useState(0); // Total sum of all invoices
-  const [unpaidTotalSum, setUnpaidTotalSum] = useState(0); // Total sum of unpaid invoices
-  const [showProjects, setShowProjects] = useState(true); // State to show/hide projects
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false); // Track editing state
+  const [newProjectName, setNewProjectName] = useState(""); // Track new project name
+  const [totalSum, setTotalSum] = useState(0);
+  const [unpaidTotalSum, setUnpaidTotalSum] = useState(0);
+  const [showProjects, setShowProjects] = useState(true);
 
   useEffect(() => {
     fetchProjects();
@@ -26,37 +35,32 @@ function Projects({
   // Fetch all invoices for the selected project
   const fetchInvoicesForProject = async (projectId) => {
     setSelectedProject(projectId);
-    setShowProjects(false); // Hide the projects list when a project is selected
+    setShowProjects(false);
 
     try {
-      // Query for fetching invoices linked to the selected project
       const q = query(
         collection(db, "invoices"),
         where("project", "==", projectId)
       );
       const querySnapshot = await getDocs(q);
 
-      // Fetch the project name from the project map or database
-      const project = projects.find(([id]) => id === projectId); // Assuming projects is an array of [projectId, projectName]
-      const projectName = project ? project[1] : "Unknown Project"; // Get the project name, default to "Unknown Project"
+      const project = projects.find(([id]) => id === projectId);
+      const projectName = project ? project[1] : "Unknown Project";
 
-      // Map over invoices and add project name to each invoice
       const invoiceList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-        projectName, // Attach the project name to each invoice
+        projectName,
       }));
 
       setInvoices(invoiceList);
 
-      // Calculate the total sum of all invoices
       const total = invoiceList.reduce(
         (acc, invoice) => acc + Number(invoice.totalSum),
         0
       );
       setTotalSum(total);
 
-      // Calculate the total sum of unpaid invoices
       const unpaidTotal = invoiceList
         .filter((invoice) => !invoice.paid)
         .reduce((acc, invoice) => acc + Number(invoice.totalSum), 0);
@@ -75,8 +79,30 @@ function Projects({
 
   // Get the name of the selected project
   const getSelectedProjectName = () => {
-    const project = projects.find(([id]) => id === selectedProject); // Use array destructuring for [id, name]
-    return project ? project[1] : ""; // Return project name
+    const project = projects.find(([id]) => id === selectedProject);
+    return project ? project[1] : "";
+  };
+
+  // Edit Project Name
+  const startEditingProjectName = () => {
+    const project = projects.find(([id]) => id === selectedProject);
+    setNewProjectName(project[1]); // Set the current project name in the input field
+    setIsEditingProjectName(true); // Enable editing mode
+  };
+
+  // Save the new project name to Firestore
+  const saveProjectName = async () => {
+    if (!newProjectName.trim()) return;
+
+    try {
+      const projectRef = doc(db, "projects", selectedProject);
+      await updateDoc(projectRef, { name: newProjectName.trim() });
+
+      setIsEditingProjectName(false); // Exit editing mode
+      fetchProjects(); // Refresh the projects list to show the updated name
+    } catch (error) {
+      console.error("Error updating project name:", error);
+    }
   };
 
   return (
@@ -88,11 +114,33 @@ function Projects({
         </button>
       </div>
 
-      {/* Show the selected project name when the project is selected */}
+      {/* Show the selected project name with edit button */}
       {selectedProject && !showProjects && (
         <div className={`selected`}>
-          <span className="project-item-icon">📁</span>
-          {getSelectedProjectName()}
+          <div className="da">
+            <div className="project-item-icon">📁</div>
+            {isEditingProjectName ? (
+              <input
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                className="edit-project-input"
+              />
+            ) : (
+              getSelectedProjectName()
+            )}
+          </div>
+          {!isEditingProjectName ? (
+            <button className="edit-button" onClick={startEditingProjectName}>
+              Edit
+            </button>
+          ) : (
+            <div>
+              <button onClick={saveProjectName} className="edit-button ml">Save</button>
+              <button onClick={() => setIsEditingProjectName(false)} className="edit-button ml">
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -115,8 +163,10 @@ function Projects({
                 }`}
                 onClick={() => fetchInvoicesForProject(projectId)}
               >
-                <span className="project-item-icon">📁</span>
-                {projectName}
+                <div>
+                  <span className="project-item-icon">📁</span>
+                  {projectName}
+                </div>
               </li>
             ))}
           </ul>

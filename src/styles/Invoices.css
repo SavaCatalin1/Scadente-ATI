@@ -183,3 +183,54 @@
 .mr {
   margin-right: 1rem;
 }
+
+/* Sorting Buttons */
+.sort-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.sort-button {
+  background-color: #3498db; /* Primary blue color */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+.sort-button:hover {
+  background-color: #2980b9; /* Darker blue on hover */
+  transform: translateY(-2px); /* Lift effect */
+}
+
+.sort-button:active {
+  background-color: #1e6a99; /* Even darker blue on click */
+  transform: translateY(0); /* Reset lift */
+}
+
+/* Clear Filters Button */
+.clear-filters-button {
+  background-color: #e74c3c; /* Red color */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+.clear-filters-button:hover {
+  background-color: #c0392b; /* Darker red on hover */
+  transform: translateY(-2px); /* Lift effect */
+}
+
+.clear-filters-button:active {
+  background-color: #a93226; /* Even darker red on click */
+  transform: translateY(0); /* Reset lift */
+}
