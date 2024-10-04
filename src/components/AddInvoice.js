@@ -61,6 +61,7 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
         supplier,
         invoiceNo,
         totalSum,
+        remainingSum: totalSum,
         issueDate, // Store issueDate as a Date object (timestamp)
         paymentDate, // Store paymentDate as a Date object (timestamp)
         project: selectedProject, // Include the selected project

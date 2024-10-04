@@ -234,3 +234,114 @@
   background-color: #a93226; /* Even darker red on click */
   transform: translateY(0); /* Reset lift */
 }
+
+
+/* Payment History Styles */
+.payment-history-toggle button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: background-color 0.3s ease;
+}
+
+.payment-history-toggle button:hover {
+  background-color: #2980b9;
+}
+
+.payment-history {
+  background-color: #f7f9fc;
+  border-left: 4px solid #3498db;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-top: 10px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.payment-history ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.payment-history ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.payment-amount {
+  font-weight: bold;
+  color: #2ecc71;
+}
+
+.delete-payment-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.delete-payment-btn:hover {
+  background-color: #c0392b;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Button Styles */
+.save-button {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-right: 10px;
+}
+
+.save-button:hover {
+  background-color: #27ae60;
+}
+
+.paid-button {
+  background-color: #3498db;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.paid-button:hover {
+  background-color: #2980b9;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.invitm-div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.view {
+  width: 20%;
+}

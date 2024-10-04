@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import moment from "moment";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css"
+import "react-datepicker/dist/react-datepicker.css";
 import { db } from "../firebase";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import HistoryIcon from "@mui/icons-material/History";
 import "react-datepicker/dist/react-datepicker.css";
-
 
 const InvoiceItem = ({
   invoice,
@@ -20,29 +19,107 @@ const InvoiceItem = ({
   deleteInvoice,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false); // Toggle for payment history
   const [invoiceData, setInvoiceData] = useState({
     supplier: invoice.supplier,
     invoiceNo: invoice.invoiceNo,
     totalSum: invoice.totalSum,
+    remainingSum: invoice.remainingSum || invoice.totalSum, // Use totalSum if remainingSum is not set
     project: invoice.project,
     issueDate: invoice.issueDate.toDate(),
     paymentDate: invoice.paymentDate.toDate(),
+    paymentHistory: invoice.paymentHistory || [], // Payment history array
   });
 
+  const togglePaymentHistory = () => {
+    setIsHistoryVisible(!isHistoryVisible); // Toggle payment history visibility
+  };
+
   const markAsPaid = async (invoiceId) => {
-    const confirmPayment = window.confirm(
-      "Sunteti sigur ca vreti sa marcati ca platit?"
+    const paymentAmount = parseFloat(
+      window.prompt(
+        `Introduceti suma pe care doriti sa o platiti (din ${invoiceData.remainingSum} LEI):`
+      )
     );
-    if (!confirmPayment) return;
+
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      alert("Suma introdusa nu este valida.");
+      return;
+    }
+
+    if (paymentAmount > invoiceData.remainingSum) {
+      alert(
+        `Suma introdusa depaseste suma ramasa de plata (${invoiceData.remainingSum} LEI).`
+      );
+      return;
+    }
+
+    const paymentEntry = {
+      amount: paymentAmount,
+      date: new Date(),
+    };
+
+    const newRemainingSum = invoiceData.remainingSum - paymentAmount;
+    const isFullyPaid = newRemainingSum === 0;
 
     const invoiceRef = doc(db, "invoices", invoiceId);
     try {
-      await updateDoc(invoiceRef, { paid: true });
+      // Update the invoice in Firestore
+      await updateDoc(invoiceRef, {
+        remainingSum: newRemainingSum,
+        paid: isFullyPaid, // Mark as fully paid if remainingSum is 0
+        paymentHistory: arrayUnion(paymentEntry), // Append the new payment entry
+      });
+
+      // Update local state
+      setInvoiceData((prevData) => ({
+        ...prevData,
+        remainingSum: newRemainingSum,
+        paid: isFullyPaid,
+        paymentHistory: [...prevData.paymentHistory, paymentEntry], // Update history locally
+      }));
+
       fetchInvoices();
       fetchInvoicesHome();
       if (fetchPredictedInvoices) fetchPredictedInvoices();
     } catch (error) {
       console.error("Error updating invoice status:", error);
+    }
+  };
+
+  // Delete Payment Logic
+  const deletePayment = async (payment, invoiceId) => {
+    const confirmDelete = window.confirm(
+      `Sunteti sigur ca vreti sa stergeti aceasta plata de ${payment.amount} LEI?`
+    );
+    if (!confirmDelete) return;
+
+    const newRemainingSum = invoiceData.remainingSum + payment.amount;
+
+    const invoiceRef = doc(db, "invoices", invoiceId);
+    try {
+      // Update the invoice in Firestore to remove the payment and adjust remaining sum
+      await updateDoc(invoiceRef, {
+        remainingSum: newRemainingSum,
+        paid: false, // If any payment is deleted, mark as unpaid
+        paymentHistory: arrayRemove(payment), // Remove the payment from history
+      });
+
+      // Update local state
+      setInvoiceData((prevData) => ({
+        ...prevData,
+        remainingSum: newRemainingSum,
+        paid: false,
+        paymentHistory: prevData.paymentHistory.filter(
+          (p) => p.date !== payment.date
+        ), // Remove payment locally
+      }));
+
+      fetchInvoices();
+      fetchInvoicesHome();
+      if (fetchPredictedInvoices) fetchPredictedInvoices();
+    } catch (error) {
+      console.error("Error deleting payment:", error);
     }
   };
 
@@ -77,6 +154,7 @@ const InvoiceItem = ({
         supplier: invoiceData.supplier,
         invoiceNo: invoiceData.invoiceNo,
         totalSum: invoiceData.totalSum,
+        remainingSum: invoiceData.remainingSum,
         project: invoiceData.project,
         issueDate: invoiceData.issueDate,
         paymentDate: invoiceData.paymentDate,
@@ -185,13 +263,45 @@ const InvoiceItem = ({
               {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
             </span>
             <span className="view">
-              <b>Total plata:</b> {invoice.totalSum} LEI
+              <b>Total initial:</b> {invoice.totalSum} LEI
+            </span>
+            <span className="view">
+              <b>Suma ramasa:</b> {invoiceData.remainingSum} LEI
             </span>
             <span className="view">
               <b>Data scadenta:</b>{" "}
               {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
             </span>
           </div>
+
+          <div className="payment-history-toggle">
+            <button onClick={togglePaymentHistory}>
+              {isHistoryVisible
+                ? "Ascunde Istoric Plati"
+                : "Arata Istoric Plati"}
+            </button>
+          </div>
+
+          {isHistoryVisible && invoiceData.paymentHistory.length > 0 && (
+            <div className="payment-history">
+              <b>Istoric plati:</b>
+              <ul>
+                {invoiceData.paymentHistory.map((payment, index) => (
+                  <li key={index}>
+                    {moment(payment.date).format("DD-MM-YYYY")}:{" "}
+                    <span className="payment-amount">{payment.amount} LEI</span>
+                    <button
+                      className="delete-payment-btn"
+                      onClick={() => deletePayment(payment, invoice.id)}
+                    >
+                      Sterge
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="delete-flex invitm-div">
             {invoice.status && (
               <span

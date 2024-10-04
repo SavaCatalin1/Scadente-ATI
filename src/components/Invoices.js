@@ -6,6 +6,7 @@ import InvoiceItem from "./InvoiceItem";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
+import AddRemainingSumToInvoices from "./FIX";
 
 function Invoices({
   projects,
@@ -77,9 +78,10 @@ function Invoices({
     }
   };
 
+  // Updated totalUnpaidSum to use remainingSum
   const totalUnpaidSum = filteredInvoices
     .filter((invoice) => !invoice.paid)
-    .reduce((acc, invoice) => acc + Number(invoice.totalSum), 0);
+    .reduce((acc, invoice) => acc + Number(invoice.remainingSum), 0);
 
   // Clear Filters
   const clearFilters = () => {
@@ -106,7 +108,7 @@ function Invoices({
     <div className="page-content">
       <div className="invoices-flex">
         <div className="page-title2 width">Toate facturile</div>
-
+        {/* <AddRemainingSumToInvoices /> */}
         {/* Supplier Filter */}
         <div className="supplier-flex width">
           <span className="supplier-text">
