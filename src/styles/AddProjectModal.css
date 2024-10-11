@@ -26,6 +26,7 @@
   
   .modal-input {
     width: 95%;
+    max-width: 20rem;
     padding: 10px;
     margin-bottom: 20px;
     border: 1px solid #ccc;

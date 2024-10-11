@@ -4,19 +4,20 @@ import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../styles/AddInvoice.css";
+import Supplier from "./Supplier";
 
 function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
-  const [supplier, setSupplier] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
   const [totalSum, setTotalSum] = useState(0);
   const [issueDate, setIssueDate] = useState(new Date());
   const [paymentDate, setPaymentDate] = useState(new Date());
-  const [projects, setProjects] = useState([]); // Store projects fetched from Firestore
-  const [selectedProject, setSelectedProject] = useState(""); // Selected project
-  const [loading, setLoading] = useState(false); // Loading state to prevent double submission
+  const [projects, setProjects] = useState([]); 
+  const [selectedProject, setSelectedProject] = useState(""); 
+  const [loading, setLoading] = useState(false); 
+  const [selectedSupplier, setSelectedSupplier] = useState(null); 
+  const [successMessage, setSuccessMessage] = useState(""); 
 
   useEffect(() => {
-    // Fetch the list of projects from Firestore when the modal is opened
     const fetchProjects = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "projects"));
@@ -31,72 +32,72 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
     };
 
     if (isOpen) {
-      fetchProjects(); // Only fetch projects when the modal is opened
+      fetchProjects();
     }
   }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Set loading to true to prevent duplicate submission
     setLoading(true);
 
-    // Check if an invoice with the same invoiceNo exists
     try {
       const invoicesSnapshot = await getDocs(collection(db, "invoices"));
-
-      // Check if an invoice with the same invoiceNo exists in the fetched invoices
       const existingInvoice = invoicesSnapshot.docs.find(
         (doc) => doc.data().invoiceNo === invoiceNo
       );
 
       if (existingInvoice) {
-        alert("O factura cu acest numar de factura exista deja."); // Alert the user
-        setLoading(false); // Reset loading state if duplicate found
-        return; // Stop form submission if the invoice already exists
+        alert("O factura cu acest numar de factura exista deja.");
+        setLoading(false);
+        return;
       }
 
-      // If the invoiceNo is unique, proceed with adding the new invoice
+      const supid = selectedSupplier.id;
       await addDoc(collection(db, "invoices"), {
-        supplier,
+        supplier: supid,
         invoiceNo,
         totalSum,
         remainingSum: totalSum,
-        issueDate, // Store issueDate as a Date object (timestamp)
-        paymentDate, // Store paymentDate as a Date object (timestamp)
-        project: selectedProject, // Include the selected project
-        paid: false, // Default unpaid status
+        issueDate,
+        paymentDate,
+        project: selectedProject,
+        paid: false,
       });
 
-      // Reset the form after successful submission
+      // Show success message
+      setSuccessMessage("Factura a fost adaugata cu succes!");
+      setTimeout(() => setSuccessMessage(""), 3000); 
+
       closeModal();
-      fetchInvoices(); // Refresh invoices
-      fetchInvoicesHome(); // Refresh home invoices
-      setSupplier("");
+      fetchInvoices();
+      fetchInvoicesHome();
+
+      setSelectedSupplier("");
       setInvoiceNo("");
       setTotalSum(0);
       setSelectedProject("");
     } catch (error) {
       console.error("Error adding invoice:", error);
     } finally {
-      setLoading(false); // Reset loading state after submission completes
+      setLoading(false);
     }
   };
 
-  if (!isOpen) return null; // Don't render the modal if it's not open
-
+  if (!isOpen) return null;
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         <h2 className="modal-title">Adauga factura noua</h2>
+
+        {/* Success message */}
+        {successMessage && (
+          <div className="success-message">
+            {successMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="modal-form">
-          <label className="modal-label">Furnizor</label>
-          <input
-            value={supplier}
-            onChange={(e) => setSupplier(e.target.value)}
-            required
-            className="modal-input"
-          />
+          <Supplier setSelectedSupplier={setSelectedSupplier} />
 
           <label className="modal-label">Nr. factura</label>
           <input
@@ -149,10 +150,9 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
           <button
             type="submit"
             className="modal-submit"
-            disabled={loading} // Disable button while loading
+            disabled={loading}
           >
             {loading ? "Adaugare..." : "Adauga factura"}{" "}
-            {/* Show loading text */}
           </button>
         </form>
         <button className="modal-close" onClick={closeModal}>

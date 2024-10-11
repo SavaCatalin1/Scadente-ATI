@@ -47,7 +47,8 @@
 
 .modal-datepicker {
   margin-bottom: 15px;
-  width: 100%;
+  width: 95%;
+  max-width: 20rem;
   padding: 10px;
   font-size: 16px;
   border-radius: 5px;
@@ -83,4 +84,15 @@
 
 .modal-close:hover {
   background-color: #c0392b;
+}
+
+.success-message {
+  background-color: #28a745;
+  color: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+  display: absolute;
 }

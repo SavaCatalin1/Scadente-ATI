@@ -8,6 +8,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import HistoryIcon from "@mui/icons-material/History";
 import "react-datepicker/dist/react-datepicker.css";
+import Supplier from "./Supplier";
 
 const InvoiceItem = ({
   invoice,
@@ -17,6 +18,7 @@ const InvoiceItem = ({
   fetchInvoicesHome,
   fetchPredictedInvoices,
   deleteInvoice,
+  supplierName
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false); // Toggle for payment history
@@ -30,6 +32,7 @@ const InvoiceItem = ({
     paymentDate: invoice.paymentDate.toDate(),
     paymentHistory: invoice.paymentHistory || [], // Payment history array
   });
+  const [supplier, setSupplier] = useState("")
 
   const togglePaymentHistory = () => {
     setIsHistoryVisible(!isHistoryVisible); // Toggle payment history visibility
@@ -151,7 +154,7 @@ const InvoiceItem = ({
     const invoiceRef = doc(db, "invoices", invoice.id);
     try {
       await updateDoc(invoiceRef, {
-        supplier: invoiceData.supplier,
+        supplier: supplier.id,
         invoiceNo: invoiceData.invoiceNo,
         totalSum: invoiceData.totalSum,
         remainingSum: invoiceData.remainingSum,
@@ -166,20 +169,13 @@ const InvoiceItem = ({
       console.error("Error saving changes:", error);
     }
   };
-
   return (
     <li className="invoice-item" key={invoice.id}>
       {isEditing ? (
         <>
           {/* Edit Mode */}
           <div className="invitm-div">
-            <label>
-              <b>Furnizor:</b>
-              <input
-                value={invoiceData.supplier}
-                onChange={(e) => handleFieldChange("supplier", e.target.value)}
-              />
-            </label>
+            <Supplier setSelectedSupplier={setSupplier} />
 
             <label>
               <b>Numar factura:</b>
@@ -248,7 +244,7 @@ const InvoiceItem = ({
           {/* View Mode */}
           <div className="invitm-div">
             <span className="view">
-              <b>Furnizor:</b> {invoice.supplier}
+              <b>Furnizor:</b> {supplierName}
             </span>
             <span className="view">
               <b>Numar factura:</b> {invoice.invoiceNo}
@@ -305,11 +301,10 @@ const InvoiceItem = ({
           <div className="delete-flex invitm-div">
             {invoice.status && (
               <span
-                className={`status ${
-                  invoice.paid
-                    ? "platit"
-                    : invoice.status.replace(/\s+/g, "-").toLowerCase()
-                }`}
+                className={`status ${invoice.paid
+                  ? "platit"
+                  : invoice.status.replace(/\s+/g, "-").toLowerCase()
+                  }`}
               >
                 <b>Status:</b> {invoice.paid ? "Platit" : invoice.status}
               </span>
