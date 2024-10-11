@@ -6,6 +6,7 @@ import InvoiceItem from "./InvoiceItem";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
+import FilterListIcon from "@mui/icons-material/FilterList"; // Icon for filters dropdown
 
 function Invoices({
   projects,
@@ -16,15 +17,17 @@ function Invoices({
 }) {
   const [filteredInvoices, setFilteredInvoices] = useState(invoices);
   const [supplierFilter, setSupplierFilter] = useState("");
+  const [invoiceNoFilter, setInvoiceNoFilter] = useState(""); // New filter for invoice number
   const [issueDateFilter, setIssueDateFilter] = useState(null);
   const [paymentDateFilter, setPaymentDateFilter] = useState(null);
   const [suppliers, setSuppliers] = useState({});
-  const [loading, setLoading] = useState(true); // Loading state for supplier fetch
+  const [loading, setLoading] = useState(true); 
   const [sortOrder, setSortOrder] = useState({ field: "", order: "" });
+  const [showFilters, setShowFilters] = useState(false); 
 
   useEffect(() => {
     const fetchSuppliers = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       const supplierData = {};
       const supplierPromises = invoices.map(async (invoice) => {
         if (invoice.supplier && !supplierData[invoice.supplier]) {
@@ -32,25 +35,29 @@ function Invoices({
           if (supplierDoc.exists()) {
             supplierData[invoice.supplier] = supplierDoc.data().name;
           } else {
-            supplierData[invoice.supplier] = "Unknown Supplier"; // Fallback in case the supplier is not found
+            supplierData[invoice.supplier] = "Unknown Supplier"; 
           }
         }
       });
 
       await Promise.all(supplierPromises);
       setSuppliers(supplierData);
-      setLoading(false); // Stop loading after fetching
+      setLoading(false);
     };
 
     fetchSuppliers();
   }, [invoices]);
-  console.log(suppliers)
+
   useEffect(() => {
     let filtered = invoices.filter((invoice) => {
-      const supplierName = suppliers[invoice.supplier] || invoice.supplier; // Use name if available
+      const supplierName = suppliers[invoice.supplier] || invoice.supplier;
       const matchesSupplier = supplierName
         .toLowerCase()
         .includes(supplierFilter.toLowerCase());
+
+      const matchesInvoiceNo = invoice.invoiceNo
+        .toLowerCase()
+        .includes(invoiceNoFilter.toLowerCase());
 
       const matchesIssueDate =
         !issueDateFilter ||
@@ -60,7 +67,7 @@ function Invoices({
         !paymentDateFilter ||
         invoice.paymentDate.toDate().toDateString() === paymentDateFilter.toDateString();
 
-      return matchesSupplier && matchesIssueDate && matchesPaymentDate;
+      return matchesSupplier && matchesInvoiceNo && matchesIssueDate && matchesPaymentDate;
     });
 
     if (sortOrder.field) {
@@ -73,7 +80,7 @@ function Invoices({
     }
 
     setFilteredInvoices(filtered);
-  }, [invoices, suppliers, supplierFilter, issueDateFilter, paymentDateFilter, sortOrder]);
+  }, [invoices, suppliers, supplierFilter, invoiceNoFilter, issueDateFilter, paymentDateFilter, sortOrder]);
 
   useEffect(() => {
     fetchProjects();
@@ -99,6 +106,7 @@ function Invoices({
 
   const clearFilters = () => {
     setSupplierFilter("");
+    setInvoiceNoFilter("");
     setIssueDateFilter(null);
     setPaymentDateFilter(null);
   };
@@ -116,64 +124,80 @@ function Invoices({
   return (
     <div className="page-content">
       <div className="invoices-flex">
-        <div className="page-title2 width">Toate facturile ({filteredInvoices.length})</div>
-        <div className="supplier-flex width">
-          <span className="supplier-text">
-            <b>Furnizor:</b>{" "}
-          </span>
-          <input
-            className="supplier-input"
-            value={supplierFilter}
-            onChange={(e) => setSupplierFilter(e.target.value)}
-          />
-        </div>
-        <div className="supplier-flex width">
-          <span className="supplier-text">
-            <b>Data emitere:</b>{" "}
-          </span>
-          <DatePicker
-            selected={issueDateFilter}
-            onChange={(date) => setIssueDateFilter(date)}
-            className="supplier-input"
-            dateFormat="dd-MM-yyyy"
-            placeholderText="Selecteaza data emitere"
-          />
+        <div className="page-title2 width">
+          Toate facturile ({filteredInvoices.length})
         </div>
 
-        <div className="supplier-flex width">
-          <span className="supplier-text">
-            <b>Data scadenta:</b>{" "}
-          </span>
-          <DatePicker
-            selected={paymentDateFilter}
-            onChange={(date) => setPaymentDateFilter(date)}
-            className="supplier-input"
-            dateFormat="dd-MM-yyyy"
-            placeholderText="Selecteaza data scadenta"
-          />
-        </div>
-
-        <div className="filters-clear-section">
-          <button onClick={clearFilters} className="clear-filters-button">
-            <ClearAllIcon />
+        {/* Filters Dropdown Button */}
+        <div className="filters-dropdown">
+          <button onClick={() => setShowFilters(!showFilters)} className="filters-button">
+            <FilterListIcon /> {showFilters ? "Ascunde filtre" : "Arata filtre"}
           </button>
         </div>
 
-        <div className="width align-right">
-          <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
-        </div>
-      </div>
+        {/* Filters Section */}
+        {showFilters && (
+          <div className="filters-section">
+            <div className="supplier-flex width">
+              <label className="label">Furnizor:</label>
+              <input
+                className="supplier-input"
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+              />
+            </div>
+            <div className="supplier-flex width">
+              <label className="label">Nr. Factura:</label> 
+              <input
+                className="supplier-input"
+                value={invoiceNoFilter}
+                onChange={(e) => setInvoiceNoFilter(e.target.value)}
+              />
+            </div>
+            <div className="supplier-flex width">
+              <label className="label">Data emitere:</label>
+              <DatePicker
+                selected={issueDateFilter}
+                onChange={(date) => setIssueDateFilter(date)}
+                className="date-picker"
+                dateFormat="dd-MM-yyyy"
+                placeholderText="Selecteaza data emitere"
+              />
+            </div>
 
-      <div className="sort-buttons">
-        <button onClick={() => toggleSort("issueDate")} className="sort-button">
+            <div className="supplier-flex width">
+              <label className="label">Data scadenta:</label>
+              <DatePicker
+                selected={paymentDateFilter}
+                onChange={(date) => setPaymentDateFilter(date)}
+                className="date-picker"
+                dateFormat="dd-MM-yyyy"
+                placeholderText="Selecteaza data scadenta"
+              />
+            </div>
+
+            <button onClick={() => toggleSort("issueDate")} className="sort-button">
           Sorteaza dupa Data Emitere ({sortOrder.field === "issueDate" ? sortOrder.order : "none"})
         </button>
         <button onClick={() => toggleSort("paymentDate")} className="sort-button">
           Sorteaza dupa Data Scadenta ({sortOrder.field === "paymentDate" ? sortOrder.order : "none"})
         </button>
+        
+        <button onClick={clearFilters} className="clear-filters-button">
+              <ClearAllIcon /> Curata filtrele
+            </button>
+          </div>
+        )}
+        
+        <div className="width align-right">
+          <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
+        </div>
       </div>
 
-      {/* Show loading indicator if supplier data is still loading */}
+      {/* <div className="sort-buttons">
+        
+      </div> */}
+
       {loading ? (
         <p>Loading suppliers...</p>
       ) : (
@@ -182,7 +206,7 @@ function Invoices({
             <InvoiceItem
               key={invoice.id}
               invoice={invoice}
-              supplierName={suppliers[invoice.supplier] || "Unknown Supplier"} // Use supplier name or fallback
+              supplierName={suppliers[invoice.supplier] || "Unknown Supplier"} 
               projects={projects}
               fetchProjects={fetchProjects}
               fetchInvoices={fetchInvoices}

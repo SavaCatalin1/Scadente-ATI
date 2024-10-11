@@ -345,3 +345,110 @@
 .view {
   width: 20%;
 }
+.filters-button {
+  position: relative; /* Relative to allow positioning the filters section */
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.filters-button:hover {
+  background-color: #0056b3;
+}
+
+.filters-section {
+  position: absolute; /* Absolute positioning to overlay the content */
+  top: 5rem; /* Distance from the button */
+  left: 47%; /* Start from the left of the button */
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 4px;
+  z-index: 1000; /* Ensure it appears above other content */
+  width: 20%; /* Full width dropdown */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.clear-filters-button {
+  background-color: #ff3b3b;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.clear-filters-button:hover {
+  background-color: #e60000;
+}
+
+.supplier-flex {
+  margin-bottom: 10px;
+}
+
+.filters-section .supplier-input {
+  width: calc(100% - 20px);
+  padding: 5px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.date-picker {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.filters-section label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.sort-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.sort-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: .5rem;
+}
+
+.sort-button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+.clear-filters-button {
+  background-color: #ff3b3b;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.clear-filters-button:hover {
+  background-color: #e60000;
+}
+
+.label{
+  width: 8rem;
+}
