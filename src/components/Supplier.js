@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import axios from "axios";
 import Modal from "react-modal";
@@ -7,7 +7,7 @@ import "../styles/Supplier.css"; // Add custom styles for the modals here
 
 Modal.setAppElement("#root");
 
-function Supplier({ setSelectedSupplier }) {
+function Supplier({ setSelectedSupplier, selectedSupplier }) {
   const [searchInput, setSearchInput] = useState("");
   const [suppliers, setSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
@@ -40,6 +40,31 @@ function Supplier({ setSelectedSupplier }) {
     };
     fetchSuppliers();
   }, []);
+
+  // Fetch supplier details when selectedSupplier (ID) is provided
+  useEffect(() => {
+    const fetchSelectedSupplier = async () => {
+      if (selectedSupplier) {
+        try {
+          const supplierDoc = await getDoc(doc(db, "suppliers", selectedSupplier));
+          if (supplierDoc.exists()) {
+            const supplierData = supplierDoc.data();
+            setSearchInput(supplierData.name); // Set the supplier's name in the search input
+            setSelectedSupplier({ id: supplierDoc.id, ...supplierData }); // Update the selected supplier data
+          } else {
+            setError("Selected supplier not found.");
+          }
+        } catch (error) {
+          console.error("Error fetching supplier:", error);
+          setError("Error fetching supplier from Firestore.");
+        }
+      }
+    };
+
+    if (selectedSupplier) {
+      fetchSelectedSupplier();
+    }
+  }, [selectedSupplier, setSelectedSupplier]);
 
   useEffect(() => {
     const debounceSearch = setTimeout(() => {

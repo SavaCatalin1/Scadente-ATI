@@ -26,7 +26,6 @@ function Projects({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
-  const [unpaidTotalSum, setUnpaidTotalSum] = useState(0); // Track unpaid total
   const [showProjects, setShowProjects] = useState(true);
 
   useEffect(() => {

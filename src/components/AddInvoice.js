@@ -11,11 +11,11 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
   const [totalSum, setTotalSum] = useState(0);
   const [issueDate, setIssueDate] = useState(new Date());
   const [paymentDate, setPaymentDate] = useState(new Date());
-  const [projects, setProjects] = useState([]); 
-  const [selectedProject, setSelectedProject] = useState(""); 
-  const [loading, setLoading] = useState(false); 
-  const [selectedSupplier, setSelectedSupplier] = useState(null); 
-  const [successMessage, setSuccessMessage] = useState(""); 
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -66,7 +66,7 @@ function AddInvoice({ isOpen, closeModal, fetchInvoices, fetchInvoicesHome }) {
 
       // Show success message
       setSuccessMessage("Factura a fost adaugata cu succes!");
-      setTimeout(() => setSuccessMessage(""), 3000); 
+      setTimeout(() => setSuccessMessage(""), 3000);
 
       closeModal();
       fetchInvoices();

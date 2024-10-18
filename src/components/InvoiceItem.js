@@ -63,27 +63,33 @@ const InvoiceItem = ({
 
   const submitPayment = async () => {
     const paymentAmountFloat = parseFloat(paymentAmount);
-
+  
     if (isNaN(paymentAmountFloat) || paymentAmountFloat <= 0) {
       alert("Suma introdusa nu este valida.");
       return;
     }
-
+  
     if (paymentAmountFloat > invoiceData.remainingSum) {
       alert(
         `Suma introdusa depaseste suma ramasa de plata (${invoiceData.remainingSum} LEI).`
       );
       return;
     }
-
+  
     const paymentEntry = {
       amount: paymentAmountFloat,
       date: Timestamp.fromDate(new Date()), // Use Firestore Timestamp for consistency
     };
-
-    const newRemainingSum = invoiceData.remainingSum - paymentAmountFloat;
-    const isFullyPaid = newRemainingSum === 0;
-
+  
+    // Calculate the new remaining sum
+    let newRemainingSum = Number(invoiceData.remainingSum) - Number(paymentAmountFloat);
+    const isFullyPaid = newRemainingSum <= 0;
+  
+    // Ensure remainingSum is exactly 0 if fully paid
+    if (isFullyPaid) {
+      newRemainingSum = 0;
+    }
+  
     const invoiceRef = doc(db, "invoices", invoice.id);
     try {
       // Update the invoice in Firestore
@@ -92,7 +98,7 @@ const InvoiceItem = ({
         paid: isFullyPaid, // Mark as fully paid if remainingSum is 0
         paymentHistory: arrayUnion(paymentEntry), // Append the new payment entry
       });
-
+  
       // Update local state
       setInvoiceData((prevData) => ({
         ...prevData,
@@ -100,7 +106,7 @@ const InvoiceItem = ({
         paid: isFullyPaid,
         paymentHistory: [...prevData.paymentHistory, paymentEntry], // Update history locally
       }));
-
+  
       if (fetchInvoices) fetchInvoices();
       if (fetchInvoicesHome) fetchInvoicesHome();
       if (fetchPredictedInvoices) fetchPredictedInvoices();
@@ -110,7 +116,6 @@ const InvoiceItem = ({
       console.error("Error updating invoice status:", error);
     }
   };
-
   const markAsUnpaid = async (invoiceId) => {
     const confirmPayment = window.confirm(
       "Sunteti sigur ca vreti sa marcati ca neplatit?"
@@ -153,30 +158,32 @@ const InvoiceItem = ({
       `Sunteti sigur ca vreti sa stergeti aceasta plata de ${payment.amount} LEI?`
     );
     if (!confirmDelete) return;
-
-    const newRemainingSum = invoiceData.remainingSum + payment.amount;
-
+  
+    // Calculate the new remaining sum after deleting the payment
+    const newRemainingSum = Number(invoiceData.remainingSum) + Number(payment.amount);
+    const isUnpaid = newRemainingSum > 0; // Mark as unpaid if remaining sum is greater than 0
+  
     const invoiceRef = doc(db, "invoices", invoiceId);
     try {
       // Update the invoice in Firestore to remove the payment and adjust remaining sum
       await updateDoc(invoiceRef, {
         remainingSum: newRemainingSum,
-        paid: false, // If any payment is deleted, mark as unpaid
+        paid: false, // Always mark as unpaid when a payment is deleted
         paymentHistory: arrayRemove(payment), // Remove the payment from history
       });
-
+  
       // Update local state
       setInvoiceData((prevData) => ({
         ...prevData,
         remainingSum: newRemainingSum,
-        paid: false,
+        paid: isUnpaid, // Update local state to reflect unpaid status
         paymentHistory: prevData.paymentHistory.filter(
           (p) => p.date.toString() !== payment.date.toString()
         ), // Remove payment locally
       }));
-
-      if(fetchInvoices)fetchInvoices();
-      if(fetchInvoicesHome)fetchInvoicesHome();
+  
+      if (fetchInvoices) fetchInvoices();
+      if (fetchInvoicesHome) fetchInvoicesHome();
       if (fetchPredictedInvoices) fetchPredictedInvoices();
       if (fetchInvoicesForProject) fetchInvoicesForProject(selectedProject);
     } catch (error) {
@@ -184,14 +191,13 @@ const InvoiceItem = ({
     }
   };
 
-
   return (
     <li className="invoice-item" key={invoice.id}>
       {isEditing ? (
         <>
           {/* Edit Mode */}
           <div className="invitm-div">
-            <Supplier setSelectedSupplier={setSupplier} />
+            <Supplier setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier}/>
 
             <label>
               <b>Numar factura:</b>
@@ -288,7 +294,7 @@ const InvoiceItem = ({
               <b>Total initial:</b> {invoice.totalSum} LEI
             </span>
             <span className="view">
-              <b>Suma ramasa:</b> {invoiceData.remainingSum} LEI
+              <b>Suma ramasa:</b> {invoice.remainingSum} LEI
             </span>
             <span className="view">
               <b>Data scadenta:</b>{" "}

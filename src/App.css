@@ -15,3 +15,37 @@
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
+
+.app-closed-container {
+  text-align: center;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 600px;
+  margin: auto;
+}
+
+.app-closed-message h1 {
+  font-size: 2rem;
+  color: #ff4a4a;
+  margin-bottom: 10px;
+}
+
+.app-closed-message p {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 10px 0;
+}
+
+@media (max-width: 768px) {
+  .app-closed-message h1 {
+    font-size: 1.5rem;
+  }
+
+  .app-closed-message p {
+    font-size: 1rem;
+  }
+}

@@ -21,6 +21,8 @@ function App() {
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const [isFirebaseQuotaExceeded, setIsFirebaseQuotaExceeded] = useState(false);
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
@@ -35,7 +37,12 @@ function App() {
       setProjects(projectsMap); // Set the projects in state
       setProjectsLoaded(true); // Indicate that projects have been fetched
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      if (error.code === "resource-exhausted") {
+        setIsFirebaseQuotaExceeded(true);
+        console.log("yes")
+      } else {
+        console.error("Firebase error:", error);
+      }
     }
   };
 
@@ -68,7 +75,12 @@ function App() {
       // Set the invoices state with the fetched and updated invoices
       setInvoices(allInvoices);
     } catch (error) {
-      console.error("Error fetching invoices:", error);
+      if (error.code === "resource-exhausted") {
+        setIsFirebaseQuotaExceeded(true);
+        console.log("yes")
+      } else {
+        console.error("Firebase error:", error);
+      }
     }
   };
 
@@ -111,7 +123,12 @@ function App() {
 
       setInvoicesHome(invoicesDue);
     } catch (error) {
-      console.error("Error fetching invoices:", error);
+      if (error.code === "resource-exhausted") {
+        setIsFirebaseQuotaExceeded(true);
+        console.log("yes")
+      } else {
+        console.error("Firebase error:", error);
+      }
     }
   };
 
@@ -150,6 +167,20 @@ function App() {
 
     fetchSuppliers();
   }, [invoices]);
+
+  if (isFirebaseQuotaExceeded) {
+    return (
+      <div className="app-closed-container">
+        <div className="app-closed-message">
+          <h1>Serviciu indisponibil momentan</h1>
+          <p>
+            Din cauza traficului ridicat, serviciul este inchis temporar.
+          </p>
+          <p>Traficul se reseteaza la ora 10:00 AM zilnic.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Router>
