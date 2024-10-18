@@ -18,14 +18,15 @@ function Projects({
   fetchProjects,
   fetchInvoices,
   fetchInvoicesHome,
+  suppliers,
+  loading
 }) {
   const [selectedProject, setSelectedProject] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditingProjectName, setIsEditingProjectName] = useState(false); // Track editing state
-  const [newProjectName, setNewProjectName] = useState(""); // Track new project name
-  const [totalSum, setTotalSum] = useState(0);
-  const [unpaidTotalSum, setUnpaidTotalSum] = useState(0);
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [unpaidTotalSum, setUnpaidTotalSum] = useState(0); // Track unpaid total
   const [showProjects, setShowProjects] = useState(true);
 
   useEffect(() => {
@@ -54,43 +55,37 @@ function Projects({
       }));
 
       setInvoices(invoiceList);
-
-      const total = invoiceList.reduce(
-        (acc, invoice) => acc + Number(invoice.totalSum),
-        0
-      );
-      setTotalSum(total);
-
-      const unpaidTotal = invoiceList
-        .filter((invoice) => !invoice.paid)
-        .reduce((acc, invoice) => acc + Number(invoice.totalSum), 0);
-      setUnpaidTotalSum(unpaidTotal);
     } catch (error) {
       console.error("Error fetching invoices:", error);
     }
   };
 
-  // Toggle modal state
+  // Calculate total and unpaid sums
+  const total = invoices.reduce(
+    (acc, invoice) => acc + Number(invoice.totalSum),
+    0
+  );
+  const unpaidTotal = invoices.reduce(
+    (acc, invoice) => acc + Number(invoice.remainingSum),
+    0
+  );
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  // Toggle the visibility of the project list
   const toggleProjects = () => setShowProjects(!showProjects);
 
-  // Get the name of the selected project
   const getSelectedProjectName = () => {
     const project = projects.find(([id]) => id === selectedProject);
     return project ? project[1] : "";
   };
 
-  // Edit Project Name
   const startEditingProjectName = () => {
     const project = projects.find(([id]) => id === selectedProject);
-    setNewProjectName(project[1]); // Set the current project name in the input field
-    setIsEditingProjectName(true); // Enable editing mode
+    setNewProjectName(project[1]);
+    setIsEditingProjectName(true);
   };
 
-  // Save the new project name to Firestore
   const saveProjectName = async () => {
     if (!newProjectName.trim()) return;
 
@@ -98,8 +93,8 @@ function Projects({
       const projectRef = doc(db, "projects", selectedProject);
       await updateDoc(projectRef, { name: newProjectName.trim() });
 
-      setIsEditingProjectName(false); // Exit editing mode
-      fetchProjects(); // Refresh the projects list to show the updated name
+      setIsEditingProjectName(false);
+      fetchProjects();
     } catch (error) {
       console.error("Error updating project name:", error);
     }
@@ -114,7 +109,6 @@ function Projects({
         </button>
       </div>
 
-      {/* Show the selected project name with edit button */}
       {selectedProject && !showProjects && (
         <div className={`selected`}>
           <div className="da">
@@ -144,23 +138,20 @@ function Projects({
         </div>
       )}
 
-      {/* Button to toggle the projects list visibility */}
       {!showProjects && (
         <button className="toggle-projects-button" onClick={toggleProjects}>
           Arata Proiectele
         </button>
       )}
 
-      {/* Conditionally render the projects list */}
       {showProjects && (
         <div className="projects-list">
           <ul>
             {projects?.map(([projectId, projectName]) => (
               <li
                 key={projectId}
-                className={` ${
-                  projectId === selectedProject ? "selected" : "project-item"
-                }`}
+                className={` ${projectId === selectedProject ? "selected" : "project-item"
+                  }`}
                 onClick={() => fetchInvoicesForProject(projectId)}
               >
                 <div>
@@ -180,15 +171,14 @@ function Projects({
               Facturi pentru proiectul selectat
             </h3>
 
-            {/* Display total sums */}
             <div className="total-sums">
               <div>
                 <b className="text">Total facturi:</b>{" "}
-                <span className="text">{totalSum.toFixed(2)} LEI</span>
+                <span className="text">{total.toFixed(2)} LEI</span>
               </div>
               <div>
                 <b className="text">Total facturi neplatite:</b>{" "}
-                <span className="text">{unpaidTotalSum.toFixed(2)} LEI</span>
+                <span className="text">{unpaidTotal.toFixed(2)} LEI</span>
               </div>
             </div>
 
@@ -203,12 +193,15 @@ function Projects({
                   ).format("DD-MM-YYYY");
 
                   return (
-                    <InvoiceItem
+                    loading ? <p>Loading suppliers...</p> : <InvoiceItem
                       key={invoice.id}
                       invoice={invoice}
                       projects={projects}
                       fetchInvoices={fetchInvoices}
                       fetchInvoicesHome={fetchInvoicesHome}
+                      supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
+                      fetchInvoicesForProject={fetchInvoicesForProject}
+                      selectedProject={selectedProject}
                     />
                   );
                 })}
@@ -220,7 +213,6 @@ function Projects({
         )}
       </div>
 
-      {/* Add the NewProjectModal */}
       <AddProjectModal
         isOpen={isModalOpen}
         closeModal={closeModal}

@@ -5,7 +5,7 @@ import Homepage from "./components/Homepage";
 import "./App.css";
 import Invoices from "./components/Invoices";
 import AddInvoice from "./components/AddInvoice";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import moment from "moment";
 import { db } from "./firebase";
 import Prediction from "./components/Prediction";
@@ -18,6 +18,8 @@ function App() {
   const [invoicesHome, setInvoicesHome] = useState([]);
   const [projects, setProjects] = useState({}); // Store projects as a map
   const [projectsLoaded, setProjectsLoaded] = useState(false); // Flag to track if projects have been fetched
+  const [suppliers, setSuppliers] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -53,8 +55,8 @@ function App() {
         const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
           ? "Scadenta depasita"
           : moment(paymentDate).isSame(moment(), "day")
-          ? "Scadenta astazi"
-          : "In termen";
+            ? "Scadenta astazi"
+            : "In termen";
 
         // Link project name to the invoice
         const projectName = projects[invoice.project] || "N/A"; // Fetch project name by project ID
@@ -126,6 +128,29 @@ function App() {
     }
   }, [projectsLoaded]); // Trigger when projects are loaded
 
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      setLoading(true);
+      const supplierData = {};
+      const supplierPromises = invoices.map(async (invoice) => {
+        if (invoice.supplier && !supplierData[invoice.supplier]) {
+          const supplierDoc = await getDoc(doc(db, "suppliers", invoice.supplier));
+          if (supplierDoc.exists()) {
+            supplierData[invoice.supplier] = supplierDoc.data().name;
+          } else {
+            supplierData[invoice.supplier] = "Unknown Supplier";
+          }
+        }
+      });
+
+      await Promise.all(supplierPromises);
+      setSuppliers(supplierData);
+      setLoading(false);
+    };
+
+    fetchSuppliers();
+  }, [invoices]);
+
   return (
     <Router>
       <div className="app-container">
@@ -140,6 +165,8 @@ function App() {
                   setInvoices={setInvoicesHome}
                   fetchInvoices={fetchInvoices}
                   fetchInvoicesHome={fetchInvoicesHome}
+                  suppliers={suppliers}
+                  loading={loading}
                 />
               }
             />
@@ -152,6 +179,8 @@ function App() {
                   invoices={invoices}
                   fetchInvoices={fetchInvoices}
                   fetchInvoicesHome={fetchInvoicesHome}
+                  suppliers={suppliers}
+                  loading={loading}
                 />
               }
             />
@@ -163,6 +192,8 @@ function App() {
                   fetchProjects={fetchProjects}
                   fetchInvoices={fetchInvoices}
                   fetchInvoicesHome={fetchInvoicesHome}
+                  suppliers={suppliers}
+                  loading={loading}
                 />
               }
             />
@@ -172,6 +203,8 @@ function App() {
                 <Projects
                   projects={Object.entries(projects)}
                   fetchProjects={fetchProjects}
+                  suppliers={suppliers}
+                  loading={loading}
                 />
               }
             />

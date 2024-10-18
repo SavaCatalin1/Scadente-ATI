@@ -13,6 +13,8 @@ function Prediction({
   fetchProjects,
   fetchInvoices,
   fetchInvoicesHome,
+  suppliers,
+  loading
 }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [predictedInvoices, setPredictedInvoices] = useState([]);
@@ -79,13 +81,14 @@ function Prediction({
             <i>{totalSum.toFixed(2)} LEI</i>
           </div>
           <ul className="invoice-list">
-            {predictedInvoices.map((invoice) => (
+            {loading ? <p>Loading suppliers...</p> : predictedInvoices.map((invoice) => (
               <InvoiceItem
                 key={invoice.id}
                 invoice={invoice}
                 fetchInvoices={fetchInvoices}
                 fetchInvoicesHome={fetchInvoicesHome}
                 fetchPredictedInvoices={fetchPredictedInvoices}
+                supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
               />
             ))}
           </ul>

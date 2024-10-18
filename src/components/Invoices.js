@@ -14,39 +14,16 @@ function Invoices({
   invoices,
   fetchInvoices,
   fetchInvoicesHome,
+  suppliers,
+  loading
 }) {
   const [filteredInvoices, setFilteredInvoices] = useState(invoices);
   const [supplierFilter, setSupplierFilter] = useState("");
   const [invoiceNoFilter, setInvoiceNoFilter] = useState(""); // New filter for invoice number
   const [issueDateFilter, setIssueDateFilter] = useState(null);
   const [paymentDateFilter, setPaymentDateFilter] = useState(null);
-  const [suppliers, setSuppliers] = useState({});
-  const [loading, setLoading] = useState(true); 
   const [sortOrder, setSortOrder] = useState({ field: "", order: "" });
-  const [showFilters, setShowFilters] = useState(false); 
-
-  useEffect(() => {
-    const fetchSuppliers = async () => {
-      setLoading(true);
-      const supplierData = {};
-      const supplierPromises = invoices.map(async (invoice) => {
-        if (invoice.supplier && !supplierData[invoice.supplier]) {
-          const supplierDoc = await getDoc(doc(db, "suppliers", invoice.supplier));
-          if (supplierDoc.exists()) {
-            supplierData[invoice.supplier] = supplierDoc.data().name;
-          } else {
-            supplierData[invoice.supplier] = "Unknown Supplier"; 
-          }
-        }
-      });
-
-      await Promise.all(supplierPromises);
-      setSuppliers(supplierData);
-      setLoading(false);
-    };
-
-    fetchSuppliers();
-  }, [invoices]);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     let filtered = invoices.filter((invoice) => {
@@ -99,7 +76,7 @@ function Invoices({
       console.error("Error deleting invoice:", error);
     }
   };
-
+  
   const totalUnpaidSum = filteredInvoices
     .filter((invoice) => !invoice.paid)
     .reduce((acc, invoice) => acc + Number(invoice.remainingSum), 0);
@@ -147,7 +124,7 @@ function Invoices({
               />
             </div>
             <div className="supplier-flex width">
-              <label className="label">Nr. Factura:</label> 
+              <label className="label">Nr. Factura:</label>
               <input
                 className="supplier-input"
                 value={invoiceNoFilter}
@@ -177,18 +154,18 @@ function Invoices({
             </div>
 
             <button onClick={() => toggleSort("issueDate")} className="sort-button">
-          Sorteaza dupa Data Emitere ({sortOrder.field === "issueDate" ? sortOrder.order : "none"})
-        </button>
-        <button onClick={() => toggleSort("paymentDate")} className="sort-button">
-          Sorteaza dupa Data Scadenta ({sortOrder.field === "paymentDate" ? sortOrder.order : "none"})
-        </button>
-        
-        <button onClick={clearFilters} className="clear-filters-button">
+              Sorteaza dupa Data Emitere ({sortOrder.field === "issueDate" ? sortOrder.order : "none"})
+            </button>
+            <button onClick={() => toggleSort("paymentDate")} className="sort-button">
+              Sorteaza dupa Data Scadenta ({sortOrder.field === "paymentDate" ? sortOrder.order : "none"})
+            </button>
+
+            <button onClick={clearFilters} className="clear-filters-button">
               <ClearAllIcon /> Curata filtrele
             </button>
           </div>
         )}
-        
+
         <div className="width align-right">
           <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
         </div>
@@ -206,7 +183,7 @@ function Invoices({
             <InvoiceItem
               key={invoice.id}
               invoice={invoice}
-              supplierName={suppliers[invoice.supplier] || "Unknown Supplier"} 
+              supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
               projects={projects}
               fetchProjects={fetchProjects}
               fetchInvoices={fetchInvoices}

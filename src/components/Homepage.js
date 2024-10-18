@@ -2,12 +2,11 @@ import React from "react";
 import "../styles/Homepage.css";
 import InvoiceItem from "./InvoiceItem";
 
-function Homepage({ invoices, setInvoices, fetchInvoices, fetchInvoicesHome }) {
+function Homepage({ invoices, setInvoices, fetchInvoices, fetchInvoicesHome, suppliers, loading }) {
   const totalSum = invoices.reduce(
-    (acc, invoice) => acc + Number(invoice.totalSum),
+    (acc, invoice) => acc + Number(invoice.remainingSum),
     0
   );
-
   return (
     <div className="page-content">
       <div className="invoices-flex">
@@ -22,10 +21,11 @@ function Homepage({ invoices, setInvoices, fetchInvoices, fetchInvoicesHome }) {
             Nu sunt facturi cu data scadenta astazi.
           </li>
         ) : (
-          invoices.map((invoice) => (
+          loading ? <p>Loading suppliers...</p> : invoices.map((invoice) => (
             <InvoiceItem
               key={invoice.id}
               invoice={invoice}
+              supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
               setInvoices={setInvoices}
               fetchInvoices={fetchInvoices}
               fetchInvoicesHome={fetchInvoicesHome}

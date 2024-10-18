@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, Timestamp } from "firebase/firestore";
 import moment from "moment";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -7,8 +7,9 @@ import { db } from "../firebase";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import HistoryIcon from "@mui/icons-material/History";
-import "react-datepicker/dist/react-datepicker.css";
+import Modal from "react-modal";
 import Supplier from "./Supplier";
+import '../styles/InvoiceItem.css'
 
 const InvoiceItem = ({
   invoice,
@@ -18,10 +19,14 @@ const InvoiceItem = ({
   fetchInvoicesHome,
   fetchPredictedInvoices,
   deleteInvoice,
-  supplierName
+  supplierName,
+  fetchInvoicesForProject,
+  selectedProject
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false); // Toggle for payment history
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // State for payment modal
+  const [paymentAmount, setPaymentAmount] = useState(""); // State for payment amount
   const [invoiceData, setInvoiceData] = useState({
     supplier: invoice.supplier,
     invoiceNo: invoice.invoiceNo,
@@ -32,25 +37,39 @@ const InvoiceItem = ({
     paymentDate: invoice.paymentDate.toDate(),
     paymentHistory: invoice.paymentHistory || [], // Payment history array
   });
-  const [supplier, setSupplier] = useState("")
+
+  const [supplier, setSupplier] = useState("");
 
   const togglePaymentHistory = () => {
     setIsHistoryVisible(!isHistoryVisible); // Toggle payment history visibility
   };
 
-  const markAsPaid = async (invoiceId) => {
-    const paymentAmount = parseFloat(
-      window.prompt(
-        `Introduceti suma pe care doriti sa o platiti (din ${invoiceData.remainingSum} LEI):`
-      )
-    );
+  const handlePaymentAmountChange = (e) => {
+    setPaymentAmount(e.target.value);
+  };
 
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+  const openPaymentModal = () => {
+    setPaymentAmount(""); // Reset payment amount
+    setIsPaymentModalOpen(true);
+  };
+
+  const closePaymentModal = () => {
+    setIsPaymentModalOpen(false);
+  };
+
+  const handleFullPayment = () => {
+    setPaymentAmount(invoiceData.remainingSum); // Set payment amount to full remaining sum
+  };
+
+  const submitPayment = async () => {
+    const paymentAmountFloat = parseFloat(paymentAmount);
+
+    if (isNaN(paymentAmountFloat) || paymentAmountFloat <= 0) {
       alert("Suma introdusa nu este valida.");
       return;
     }
 
-    if (paymentAmount > invoiceData.remainingSum) {
+    if (paymentAmountFloat > invoiceData.remainingSum) {
       alert(
         `Suma introdusa depaseste suma ramasa de plata (${invoiceData.remainingSum} LEI).`
       );
@@ -58,14 +77,14 @@ const InvoiceItem = ({
     }
 
     const paymentEntry = {
-      amount: paymentAmount,
-      date: new Date(),
+      amount: paymentAmountFloat,
+      date: Timestamp.fromDate(new Date()), // Use Firestore Timestamp for consistency
     };
 
-    const newRemainingSum = invoiceData.remainingSum - paymentAmount;
+    const newRemainingSum = invoiceData.remainingSum - paymentAmountFloat;
     const isFullyPaid = newRemainingSum === 0;
 
-    const invoiceRef = doc(db, "invoices", invoiceId);
+    const invoiceRef = doc(db, "invoices", invoice.id);
     try {
       // Update the invoice in Firestore
       await updateDoc(invoiceRef, {
@@ -82,6 +101,25 @@ const InvoiceItem = ({
         paymentHistory: [...prevData.paymentHistory, paymentEntry], // Update history locally
       }));
 
+      if (fetchInvoices) fetchInvoices();
+      if (fetchInvoicesHome) fetchInvoicesHome();
+      if (fetchPredictedInvoices) fetchPredictedInvoices();
+      if (fetchInvoicesForProject) fetchInvoicesForProject(selectedProject);
+      closePaymentModal(); // Close the modal after submission
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+    }
+  };
+
+  const markAsUnpaid = async (invoiceId) => {
+    const confirmPayment = window.confirm(
+      "Sunteti sigur ca vreti sa marcati ca neplatit?"
+    );
+    if (!confirmPayment) return;
+
+    const invoiceRef = doc(db, "invoices", invoiceId);
+    try {
+      await updateDoc(invoiceRef, { paid: false });
       fetchInvoices();
       fetchInvoicesHome();
       if (fetchPredictedInvoices) fetchPredictedInvoices();
@@ -90,7 +128,26 @@ const InvoiceItem = ({
     }
   };
 
-  // Delete Payment Logic
+  const saveInvoiceChanges = async () => {
+    const invoiceRef = doc(db, "invoices", invoice.id);
+    try {
+      await updateDoc(invoiceRef, {
+        supplier: supplier.id,
+        invoiceNo: invoiceData.invoiceNo,
+        totalSum: invoiceData.totalSum,
+        remainingSum: invoiceData.remainingSum,
+        project: invoiceData.project,
+        issueDate: invoiceData.issueDate,
+        paymentDate: invoiceData.paymentDate,
+      });
+      setIsEditing(false);
+      fetchInvoices();
+      fetchInvoicesHome();
+    } catch (error) {
+      console.error("Error saving changes:", error);
+    }
+  };
+
   const deletePayment = async (payment, invoiceId) => {
     const confirmDelete = window.confirm(
       `Sunteti sigur ca vreti sa stergeti aceasta plata de ${payment.amount} LEI?`
@@ -114,61 +171,20 @@ const InvoiceItem = ({
         remainingSum: newRemainingSum,
         paid: false,
         paymentHistory: prevData.paymentHistory.filter(
-          (p) => p.date !== payment.date
+          (p) => p.date.toString() !== payment.date.toString()
         ), // Remove payment locally
       }));
 
-      fetchInvoices();
-      fetchInvoicesHome();
+      if(fetchInvoices)fetchInvoices();
+      if(fetchInvoicesHome)fetchInvoicesHome();
       if (fetchPredictedInvoices) fetchPredictedInvoices();
+      if (fetchInvoicesForProject) fetchInvoicesForProject(selectedProject);
     } catch (error) {
       console.error("Error deleting payment:", error);
     }
   };
 
-  const markAsUnpaid = async (invoiceId) => {
-    const confirmPayment = window.confirm(
-      "Sunteti sigur ca vreti sa marcati ca neplatit?"
-    );
-    if (!confirmPayment) return;
 
-    const invoiceRef = doc(db, "invoices", invoiceId);
-    try {
-      await updateDoc(invoiceRef, { paid: false });
-      fetchInvoices();
-      fetchInvoicesHome();
-      if (fetchPredictedInvoices) fetchPredictedInvoices();
-    } catch (error) {
-      console.error("Error updating invoice status:", error);
-    }
-  };
-
-  const handleFieldChange = (field, value) => {
-    setInvoiceData((prevData) => ({
-      ...prevData,
-      [field]: value,
-    }));
-  };
-
-  const saveInvoiceChanges = async () => {
-    const invoiceRef = doc(db, "invoices", invoice.id);
-    try {
-      await updateDoc(invoiceRef, {
-        supplier: supplier.id,
-        invoiceNo: invoiceData.invoiceNo,
-        totalSum: invoiceData.totalSum,
-        remainingSum: invoiceData.remainingSum,
-        project: invoiceData.project,
-        issueDate: invoiceData.issueDate,
-        paymentDate: invoiceData.paymentDate,
-      });
-      setIsEditing(false);
-      fetchInvoices();
-      fetchInvoicesHome();
-    } catch (error) {
-      console.error("Error saving changes:", error);
-    }
-  };
   return (
     <li className="invoice-item" key={invoice.id}>
       {isEditing ? (
@@ -181,7 +197,9 @@ const InvoiceItem = ({
               <b>Numar factura:</b>
               <input
                 value={invoiceData.invoiceNo}
-                onChange={(e) => handleFieldChange("invoiceNo", e.target.value)}
+                onChange={(e) =>
+                  setInvoiceData({ ...invoiceData, invoiceNo: e.target.value })
+                }
               />
             </label>
 
@@ -190,7 +208,9 @@ const InvoiceItem = ({
               <input
                 type="number"
                 value={invoiceData.totalSum}
-                onChange={(e) => handleFieldChange("totalSum", e.target.value)}
+                onChange={(e) =>
+                  setInvoiceData({ ...invoiceData, totalSum: e.target.value })
+                }
               />
             </label>
 
@@ -198,7 +218,9 @@ const InvoiceItem = ({
               <b>Proiect:</b>
               <select
                 value={invoiceData.project}
-                onChange={(e) => handleFieldChange("project", e.target.value)}
+                onChange={(e) =>
+                  setInvoiceData({ ...invoiceData, project: e.target.value })
+                }
               >
                 <option value="" disabled>
                   Selecteaza un proiect
@@ -217,7 +239,9 @@ const InvoiceItem = ({
               <b>Data emitere:</b>
               <DatePicker
                 selected={invoiceData.issueDate}
-                onChange={(date) => handleFieldChange("issueDate", date)}
+                onChange={(date) =>
+                  setInvoiceData({ ...invoiceData, issueDate: date })
+                }
                 dateFormat="dd-MM-yyyy"
               />
             </label>
@@ -226,7 +250,9 @@ const InvoiceItem = ({
               <b>Data scadenta:</b>
               <DatePicker
                 selected={invoiceData.paymentDate}
-                onChange={(date) => handleFieldChange("paymentDate", date)}
+                onChange={(date) =>
+                  setInvoiceData({ ...invoiceData, paymentDate: date })
+                }
                 dateFormat="dd-MM-yyyy"
               />
             </label>
@@ -284,7 +310,7 @@ const InvoiceItem = ({
               <ul>
                 {invoiceData.paymentHistory.map((payment, index) => (
                   <li key={index}>
-                    {moment(payment.date).format("DD-MM-YYYY")}:{" "}
+                    {moment(payment.date.toDate()).format("DD-MM-YYYY")}:{" "}
                     <span className="payment-amount">{payment.amount} LEI</span>
                     <button
                       className="delete-payment-btn"
@@ -312,10 +338,7 @@ const InvoiceItem = ({
 
             <div className="tools invitm-div">
               {!invoice.paid && (
-                <div
-                  className="paid-button"
-                  onClick={() => markAsPaid(invoice.id)}
-                >
+                <div className="paid-button" onClick={openPaymentModal}>
                   Am platit
                 </div>
               )}
@@ -339,6 +362,37 @@ const InvoiceItem = ({
               )}
             </div>
           </div>
+
+          {/* Modal for Payment */}
+          <Modal
+            isOpen={isPaymentModalOpen}
+            onRequestClose={closePaymentModal}
+            className="payment-modal"
+            contentLabel="Introduceti suma platita"
+          >
+            <h3>Introduceti suma platita</h3>
+            <p>
+              Suma ramasa: <b>{invoiceData.remainingSum} LEI</b>
+            </p>
+            <input
+              type="number"
+              value={paymentAmount}
+              onChange={handlePaymentAmountChange}
+              placeholder="Introduceti suma"
+              className="modal-input"
+            />
+            <button onClick={handleFullPayment} className="modal-auto-complete">
+              Plata completa ({invoiceData.remainingSum} LEI)
+            </button>
+            <div className="modal-actions">
+              <button onClick={submitPayment} className="modal-submit2">
+                Confirma Plata
+              </button>
+              <button onClick={closePaymentModal} className="modal-close">
+                Anuleaza
+              </button>
+            </div>
+          </Modal>
         </>
       )}
     </li>
