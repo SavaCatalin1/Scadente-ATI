@@ -1,36 +1,18 @@
 import React, { useState, useEffect } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import moment from "moment";
 import "../styles/Projects.css";
 import AddProjectModal from "./AddProject";
 import InvoiceItem from "./InvoiceItem";
 
-function Projects({
-  projects,
-  fetchProjects,
-  fetchInvoices,
-  fetchInvoicesHome,
-  suppliers,
-  loading
-}) {
+function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
   const [selectedProject, setSelectedProject] = useState(null);
-  const [invoices, setInvoices] = useState([]);
+  const [invoices, setProjectInvoices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [showProjects, setShowProjects] = useState(true);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   // Fetch all invoices for the selected project
   const fetchInvoicesForProject = async (projectId) => {
@@ -38,14 +20,10 @@ function Projects({
     setShowProjects(false);
 
     try {
-      const q = query(
-        collection(db, "invoices"),
-        where("project", "==", projectId)
-      );
+      const q = query(collection(db, "invoices"), where("project", "==", projectId));
       const querySnapshot = await getDocs(q);
 
-      const project = projects.find(([id]) => id === projectId);
-      const projectName = project ? project[1] : "Unknown Project";
+      const projectName = projects.find(([id]) => id === projectId)?.[1] || "Unknown Project";
 
       const invoiceList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -53,21 +31,15 @@ function Projects({
         projectName,
       }));
 
-      setInvoices(invoiceList);
+      setProjectInvoices(invoiceList);
     } catch (error) {
       console.error("Error fetching invoices:", error);
     }
   };
 
   // Calculate total and unpaid sums
-  const total = invoices.reduce(
-    (acc, invoice) => acc + Number(invoice.totalSum),
-    0
-  );
-  const unpaidTotal = invoices.reduce(
-    (acc, invoice) => acc + Number(invoice.remainingSum),
-    0
-  );
+  const total = invoices.reduce((acc, invoice) => acc + Number(invoice.totalSum), 0);
+  const unpaidTotal = invoices.reduce((acc, invoice) => acc + Number(invoice.remainingSum), 0);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -75,13 +47,11 @@ function Projects({
   const toggleProjects = () => setShowProjects(!showProjects);
 
   const getSelectedProjectName = () => {
-    const project = projects.find(([id]) => id === selectedProject);
-    return project ? project[1] : "";
+    return projects.find(([id]) => id === selectedProject)?.[1] || "";
   };
 
   const startEditingProjectName = () => {
-    const project = projects.find(([id]) => id === selectedProject);
-    setNewProjectName(project[1]);
+    setNewProjectName(getSelectedProjectName());
     setIsEditingProjectName(true);
   };
 
@@ -93,7 +63,11 @@ function Projects({
       await updateDoc(projectRef, { name: newProjectName.trim() });
 
       setIsEditingProjectName(false);
-      fetchProjects();
+
+      // Update the projects state locally to reflect the new name
+      setProjects((prevProjects) =>
+        prevProjects.map(([id, name]) => (id === selectedProject ? [id, newProjectName.trim()] : [id, name]))
+      );
     } catch (error) {
       console.error("Error updating project name:", error);
     }
@@ -149,8 +123,7 @@ function Projects({
             {projects?.map(([projectId, projectName]) => (
               <li
                 key={projectId}
-                className={` ${projectId === selectedProject ? "selected" : "project-item"
-                  }`}
+                className={`${projectId === selectedProject ? "selected" : "project-item"}`}
                 onClick={() => fetchInvoicesForProject(projectId)}
               >
                 <div>
@@ -166,9 +139,7 @@ function Projects({
       <div className="invoices-section">
         {selectedProject && (
           <>
-            <h3 className="invoices-header">
-              Facturi pentru proiectul selectat
-            </h3>
+            <h3 className="invoices-header">Facturi pentru proiectul selectat</h3>
 
             <div className="total-sums">
               <div>
@@ -184,22 +155,20 @@ function Projects({
             {invoices.length > 0 ? (
               <ul className="invoice-list">
                 {invoices.map((invoice) => {
-                  const issueDateFormatted = moment(
-                    invoice.issueDate.toDate()
-                  ).format("DD-MM-YYYY");
-                  const paymentDateFormatted = moment(
-                    invoice.paymentDate.toDate()
-                  ).format("DD-MM-YYYY");
+                  const issueDateFormatted = invoice.issueDate?.toDate
+                    ? moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")
+                    : moment(invoice.issueDate).format("DD-MM-YYYY");
+
+                  const paymentDateFormatted = invoice.paymentDate?.toDate
+                    ? moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")
+                    : moment(invoice.paymentDate).format("DD-MM-YYYY");
 
                   return (
                     loading ? <p>Loading suppliers...</p> : <InvoiceItem
                       key={invoice.id}
                       invoice={invoice}
                       projects={projects}
-                      fetchInvoices={fetchInvoices}
-                      fetchInvoicesHome={fetchInvoicesHome}
                       supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
-                      fetchInvoicesForProject={fetchInvoicesForProject}
                       selectedProject={selectedProject}
                     />
                   );
@@ -212,11 +181,7 @@ function Projects({
         )}
       </div>
 
-      <AddProjectModal
-        isOpen={isModalOpen}
-        closeModal={closeModal}
-        fetchProjects={fetchProjects}
-      />
+      <AddProjectModal isOpen={isModalOpen} closeModal={closeModal} setProjects={setProjects} />
     </div>
   );
 }

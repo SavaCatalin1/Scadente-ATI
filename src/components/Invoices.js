@@ -1,25 +1,23 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Invoices.css";
-import { deleteDoc, doc, getDoc } from "firebase/firestore";
+import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import InvoiceItem from "./InvoiceItem";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
-import FilterListIcon from "@mui/icons-material/FilterList"; // Icon for filters dropdown
+import FilterListIcon from "@mui/icons-material/FilterList";
 
 function Invoices({
   projects,
-  fetchProjects,
   invoices,
-  fetchInvoices,
-  fetchInvoicesHome,
   suppliers,
+  setInvoices,
   loading
 }) {
   const [filteredInvoices, setFilteredInvoices] = useState(invoices);
   const [supplierFilter, setSupplierFilter] = useState("");
-  const [invoiceNoFilter, setInvoiceNoFilter] = useState(""); // New filter for invoice number
+  const [invoiceNoFilter, setInvoiceNoFilter] = useState("");
   const [issueDateFilter, setIssueDateFilter] = useState(null);
   const [paymentDateFilter, setPaymentDateFilter] = useState(null);
   const [sortOrder, setSortOrder] = useState({ field: "", order: "" });
@@ -51,7 +49,6 @@ function Invoices({
       filtered = filtered.sort((a, b) => {
         const dateA = a[sortOrder.field].toDate();
         const dateB = b[sortOrder.field].toDate();
-
         return sortOrder.order === "asc" ? dateA - dateB : dateB - dateA;
       });
     }
@@ -59,24 +56,18 @@ function Invoices({
     setFilteredInvoices(filtered);
   }, [invoices, suppliers, supplierFilter, invoiceNoFilter, issueDateFilter, paymentDateFilter, sortOrder]);
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
   const deleteInvoice = async (invoiceId) => {
     const confirmDelete = window.confirm("Sunteti sigur ca vreti sa stergeti aceasta factura?");
     if (!confirmDelete) return;
 
-    const invoiceRef = doc(db, "invoices", invoiceId);
     try {
-      await deleteDoc(invoiceRef);
-      fetchInvoices();
-      fetchInvoicesHome();
+      await deleteDoc(doc(db, "invoices", invoiceId));
+      setInvoices(prevInvoices => prevInvoices.filter(invoice => invoice.id !== invoiceId));
     } catch (error) {
       console.error("Error deleting invoice:", error);
     }
   };
-  
+
   const totalUnpaidSum = filteredInvoices
     .filter((invoice) => !invoice.paid)
     .reduce((acc, invoice) => acc + Number(invoice.remainingSum), 0);
@@ -105,14 +96,12 @@ function Invoices({
           Toate facturile ({filteredInvoices.length})
         </div>
 
-        {/* Filters Dropdown Button */}
         <div className="filters-dropdown">
           <button onClick={() => setShowFilters(!showFilters)} className="filters-button">
             <FilterListIcon /> {showFilters ? "Ascunde filtre" : "Arata filtre"}
           </button>
         </div>
 
-        {/* Filters Section */}
         {showFilters && (
           <div className="filters-section">
             <div className="supplier-flex width">
@@ -141,7 +130,6 @@ function Invoices({
                 placeholderText="Selecteaza data emitere"
               />
             </div>
-
             <div className="supplier-flex width">
               <label className="label">Data scadenta:</label>
               <DatePicker
@@ -152,14 +140,12 @@ function Invoices({
                 placeholderText="Selecteaza data scadenta"
               />
             </div>
-
             <button onClick={() => toggleSort("issueDate")} className="sort-button">
               Sorteaza dupa Data Emitere ({sortOrder.field === "issueDate" ? sortOrder.order : "none"})
             </button>
             <button onClick={() => toggleSort("paymentDate")} className="sort-button">
               Sorteaza dupa Data Scadenta ({sortOrder.field === "paymentDate" ? sortOrder.order : "none"})
             </button>
-
             <button onClick={clearFilters} className="clear-filters-button">
               <ClearAllIcon /> Curata filtrele
             </button>
@@ -171,10 +157,6 @@ function Invoices({
         </div>
       </div>
 
-      {/* <div className="sort-buttons">
-        
-      </div> */}
-
       {loading ? (
         <p>Loading suppliers...</p>
       ) : (
@@ -185,9 +167,6 @@ function Invoices({
               invoice={invoice}
               supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
               projects={projects}
-              fetchProjects={fetchProjects}
-              fetchInvoices={fetchInvoices}
-              fetchInvoicesHome={fetchInvoicesHome}
               deleteInvoice={deleteInvoice}
             />
           ))}

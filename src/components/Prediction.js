@@ -1,5 +1,4 @@
-// src/components/Prediction.js
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
@@ -8,21 +7,10 @@ import moment from "moment";
 import "../styles/Prediction.css";
 import InvoiceItem from "./InvoiceItem";
 
-function Prediction({
-  projects,
-  fetchProjects,
-  fetchInvoices,
-  fetchInvoicesHome,
-  suppliers,
-  loading
-}) {
+function Prediction({ projects, suppliers, loading }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [predictedInvoices, setPredictedInvoices] = useState([]);
   const [totalSum, setTotalSum] = useState(0);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   // Fetch invoices up to the selected date and link with project names
   const fetchPredictedInvoices = async () => {
@@ -41,12 +29,15 @@ function Prediction({
       const invoicesData = [];
       let sum = 0;
 
+      // Convert projects to an array of [id, name] pairs for easy lookup
+      const projectArray = Object.entries(projects);
+
       invoicesSnapshot.forEach((doc) => {
         const invoice = { id: doc.id, ...doc.data() };
-        // Link project name to the invoice
-        const projectName = projects[invoice.project] || "N/A";
-        invoicesData.push({ ...invoice, projectName }); // Add project name to invoice
-        sum += Number(invoice.totalSum); // Sum up the totalSum of each invoice
+        // Find the project name by id
+        const projectName = projectArray.find(([id]) => id === invoice.project)?.[1] || "N/A";
+        invoicesData.push({ ...invoice, projectName });
+        sum += Number(invoice.totalSum);
       });
 
       setPredictedInvoices(invoicesData);
@@ -81,16 +72,17 @@ function Prediction({
             <i>{totalSum.toFixed(2)} LEI</i>
           </div>
           <ul className="invoice-list">
-            {loading ? <p>Loading suppliers...</p> : predictedInvoices.map((invoice) => (
-              <InvoiceItem
-                key={invoice.id}
-                invoice={invoice}
-                fetchInvoices={fetchInvoices}
-                fetchInvoicesHome={fetchInvoicesHome}
-                fetchPredictedInvoices={fetchPredictedInvoices}
-                supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
-              />
-            ))}
+            {loading ? (
+              <p>Loading suppliers...</p>
+            ) : (
+              predictedInvoices.map((invoice) => (
+                <InvoiceItem
+                  key={invoice.id}
+                  invoice={invoice}
+                  supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
+                />
+              ))
+            )}
           </ul>
         </>
       ) : (

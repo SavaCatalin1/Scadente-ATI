@@ -3,7 +3,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import "../styles/AddProjectModal.css";
 
-function AddProjectModal({ isOpen, closeModal, fetchProjects }) {
+function AddProjectModal({ isOpen, closeModal, setProjects }) {
   const [projectName, setProjectName] = useState("");
 
   const handleSubmit = async (e) => {
@@ -15,11 +15,17 @@ function AddProjectModal({ isOpen, closeModal, fetchProjects }) {
 
     try {
       // Add new project to Firestore
-      await addDoc(collection(db, "projects"), {
+      const newProjectRef = await addDoc(collection(db, "projects"), {
         name: projectName.trim(),
       });
+
+      // Update the projects state in App with the new project
+      setProjects((prevProjects) => ({
+        ...prevProjects,
+        [newProjectRef.id]: projectName.trim(),
+      }));
+
       closeModal();
-      fetchProjects();
       setProjectName(""); // Reset the input after adding a new project
     } catch (error) {
       console.error("Error adding project:", error);

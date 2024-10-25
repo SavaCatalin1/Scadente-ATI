@@ -5,7 +5,7 @@ import Homepage from "./components/Homepage";
 import "./App.css";
 import Invoices from "./components/Invoices";
 import AddInvoice from "./components/AddInvoice";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import moment from "moment";
 import { db } from "./firebase";
 import Prediction from "./components/Prediction";
@@ -14,41 +14,36 @@ import Projects from "./components/Projects";
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [invoices, setInvoices] = useState([]);
-  const [invoicesHome, setInvoicesHome] = useState([]);
-  const [projects, setProjects] = useState({}); // Store projects as a map
-  const [projectsLoaded, setProjectsLoaded] = useState(false); // Flag to track if projects have been fetched
+  const [invoices, setInvoices] = useState([]);  // All invoices stored once
+  const [projects, setProjects] = useState({});  // Store projects as a map
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
-
   const [isFirebaseQuotaExceeded, setIsFirebaseQuotaExceeded] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  // Fetch all projects and store them as a map
   const fetchProjects = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "projects"));
       const projectsMap = {};
       querySnapshot.forEach((doc) => {
-        projectsMap[doc.id] = doc.data().name; // Map project ID to project name
+        projectsMap[doc.id] = doc.data().name;
       });
-      setProjects(projectsMap); // Set the projects in state
-      setProjectsLoaded(true); // Indicate that projects have been fetched
+      setProjects(projectsMap);
+      setProjectsLoaded(true);
     } catch (error) {
       if (error.code === "resource-exhausted") {
         setIsFirebaseQuotaExceeded(true);
-        console.log("yes")
       } else {
         console.error("Firebase error:", error);
       }
     }
   };
 
-  // Fetch all invoices and link projects
   const fetchInvoices = async () => {
-    if (!projectsLoaded) return; // Ensure projects are loaded before fetching invoices
+    if (!projectsLoaded) return;
 
     try {
       const querySnapshot = await getDocs(collection(db, "invoices"));
@@ -58,92 +53,47 @@ function App() {
         const invoice = { id: doc.id, ...doc.data() };
         const paymentDate = invoice.paymentDate.toDate();
 
-        // Determine the payment status based on the current date
         const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
           ? "Scadenta depasita"
           : moment(paymentDate).isSame(moment(), "day")
             ? "Scadenta astazi"
             : "In termen";
 
-        // Link project name to the invoice
-        const projectName = projects[invoice.project] || "N/A"; // Fetch project name by project ID
-
-        // Add invoice with status and linked project name
+        const projectName = projects[invoice.project] || "N/A";
         allInvoices.push({ ...invoice, status: paymentStatus, projectName });
       });
 
-      // Set the invoices state with the fetched and updated invoices
       setInvoices(allInvoices);
     } catch (error) {
       if (error.code === "resource-exhausted") {
         setIsFirebaseQuotaExceeded(true);
-        console.log("yes")
       } else {
         console.error("Firebase error:", error);
       }
     }
   };
 
-  const fetchInvoicesHome = async () => {
-    if (!projectsLoaded) return; // Ensure projects are loaded before fetching invoices
+  const getHomeInvoices = () => {
+    const today = moment().endOf("day");
 
-    const today = moment().endOf("day").toDate();
-
-    const todayQuery = query(
-      collection(db, "invoices"),
-      where("paymentDate", "==", today),
-      where("paid", "==", false)
-    );
-
-    const pastDueQuery = query(
-      collection(db, "invoices"),
-      where("paymentDate", "<", today),
-      where("paid", "==", false)
-    );
-
-    try {
-      const [todaySnapshot, pastDueSnapshot] = await Promise.all([
-        getDocs(todayQuery),
-        getDocs(pastDueQuery),
-      ]);
-
-      const invoicesDue = [];
-
-      todaySnapshot.forEach((doc) => {
-        const invoice = { id: doc.id, ...doc.data() };
-        const projectName = projects[invoice.project] || "N/A"; // Link project name
-        invoicesDue.push({ ...invoice, projectName });
-      });
-
-      pastDueSnapshot.forEach((doc) => {
-        const invoice = { id: doc.id, ...doc.data() };
-        const projectName = projects[invoice.project] || "N/A"; // Link project name
-        invoicesDue.push({ ...invoice, projectName });
-      });
-
-      setInvoicesHome(invoicesDue);
-    } catch (error) {
-      if (error.code === "resource-exhausted") {
-        setIsFirebaseQuotaExceeded(true);
-        console.log("yes")
-      } else {
-        console.error("Firebase error:", error);
-      }
-    }
+    return invoices.filter((invoice) => {
+      const paymentDate = moment(invoice.paymentDate.toDate());
+      return (
+        (paymentDate.isBefore(today, "day") || paymentDate.isSame(today, "day")) &&
+        !invoice.paid
+      );
+    });
   };
 
-  // Fetch projects first, then fetch invoices once projects are loaded
   useEffect(() => {
     fetchProjects();
   }, []);
 
-  // Fetch invoices after projects have been loaded
   useEffect(() => {
     if (projectsLoaded) {
       fetchInvoices();
-      fetchInvoicesHome();
     }
-  }, [projectsLoaded]); // Trigger when projects are loaded
+  }, [projectsLoaded]);
 
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -179,7 +129,7 @@ function App() {
           <p>Traficul se reseteaza la ora 10:00 AM zilnic.</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -192,10 +142,8 @@ function App() {
               path="/"
               element={
                 <Homepage
-                  invoices={invoicesHome}
-                  setInvoices={setInvoicesHome}
-                  fetchInvoices={fetchInvoices}
-                  fetchInvoicesHome={fetchInvoicesHome}
+                  invoices={getHomeInvoices()}  // Pass filtered invoices for home
+                  setInvoices={setInvoices}
                   suppliers={suppliers}
                   loading={loading}
                 />
@@ -206,12 +154,10 @@ function App() {
               element={
                 <Invoices
                   projects={Object.entries(projects)}
-                  fetchProjects={fetchProjects}
                   invoices={invoices}
-                  fetchInvoices={fetchInvoices}
-                  fetchInvoicesHome={fetchInvoicesHome}
                   suppliers={suppliers}
                   loading={loading}
+                  setInvoices={setInvoices}
                 />
               }
             />
@@ -220,9 +166,6 @@ function App() {
               element={
                 <Prediction
                   projects={projects}
-                  fetchProjects={fetchProjects}
-                  fetchInvoices={fetchInvoices}
-                  fetchInvoicesHome={fetchInvoicesHome}
                   suppliers={suppliers}
                   loading={loading}
                 />
@@ -233,9 +176,9 @@ function App() {
               element={
                 <Projects
                   projects={Object.entries(projects)}
-                  fetchProjects={fetchProjects}
                   suppliers={suppliers}
                   loading={loading}
+                  setProjects={setProjects}
                 />
               }
             />
@@ -245,8 +188,8 @@ function App() {
         <AddInvoice
           isOpen={isModalOpen}
           closeModal={closeModal}
-          fetchInvoices={fetchInvoices}
-          fetchInvoicesHome={fetchInvoicesHome}
+          projects={projects}
+          setInvoices={setInvoices}
         />
       </div>
     </Router>

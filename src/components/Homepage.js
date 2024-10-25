@@ -2,11 +2,12 @@ import React from "react";
 import "../styles/Homepage.css";
 import InvoiceItem from "./InvoiceItem";
 
-function Homepage({ invoices, setInvoices, fetchInvoices, fetchInvoicesHome, suppliers, loading }) {
+function Homepage({ invoices, suppliers, loading }) {
   const totalSum = invoices.reduce(
     (acc, invoice) => acc + Number(invoice.remainingSum),
     0
   );
+
   return (
     <div className="page-content">
       <div className="invoices-flex">
@@ -26,9 +27,6 @@ function Homepage({ invoices, setInvoices, fetchInvoices, fetchInvoicesHome, sup
               key={invoice.id}
               invoice={invoice}
               supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
-              setInvoices={setInvoices}
-              fetchInvoices={fetchInvoices}
-              fetchInvoicesHome={fetchInvoicesHome}
             />
           ))
         )}
