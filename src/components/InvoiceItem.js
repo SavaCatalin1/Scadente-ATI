@@ -14,7 +14,6 @@ import '../styles/InvoiceItem.css'
 const InvoiceItem = ({
   invoice,
   projects,
-  fetchProjects,
   fetchInvoices,
   fetchInvoicesHome,
   fetchPredictedInvoices,
@@ -33,8 +32,8 @@ const InvoiceItem = ({
     totalSum: invoice.totalSum,
     remainingSum: invoice.remainingSum || invoice.totalSum, // Use totalSum if remainingSum is not set
     project: invoice.project,
-    issueDate: invoice.issueDate.toDate(),
-    paymentDate: invoice.paymentDate.toDate(),
+    issueDate: invoice.issueDate instanceof Timestamp ? invoice.issueDate.toDate() : new Date(invoice.issueDate),
+    paymentDate: invoice.paymentDate instanceof Timestamp ? invoice.paymentDate.toDate() : new Date(invoice.paymentDate),
     paymentHistory: invoice.paymentHistory || [], // Payment history array
   });
 
@@ -142,8 +141,8 @@ const InvoiceItem = ({
         totalSum: invoiceData.totalSum,
         remainingSum: invoiceData.remainingSum,
         project: invoiceData.project,
-        issueDate: invoiceData.issueDate,
-        paymentDate: invoiceData.paymentDate,
+        issueDate: Timestamp.fromDate(invoiceData.issueDate),
+        paymentDate: Timestamp.fromDate(invoiceData.paymentDate),
       });
       setIsEditing(false);
       fetchInvoices();
@@ -288,7 +287,7 @@ const InvoiceItem = ({
           <div className="invitm-div">
             <span className="view">
               <b>Data emitere:</b>{" "}
-              {moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")}
+              {moment(invoiceData.issueDate).format("DD-MM-YYYY")}
             </span>
             <span className="view">
               <b>Total initial:</b> {invoice.totalSum} LEI
@@ -298,7 +297,7 @@ const InvoiceItem = ({
             </span>
             <span className="view">
               <b>Data scadenta:</b>{" "}
-              {moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")}
+              {moment(invoiceData.paymentDate).format("DD-MM-YYYY")}
             </span>
           </div>
 

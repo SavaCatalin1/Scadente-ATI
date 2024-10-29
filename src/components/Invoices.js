@@ -8,13 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
-function Invoices({
-  projects,
-  invoices,
-  suppliers,
-  setInvoices,
-  loading
-}) {
+function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
   const [filteredInvoices, setFilteredInvoices] = useState(invoices);
   const [supplierFilter, setSupplierFilter] = useState("");
   const [invoiceNoFilter, setInvoiceNoFilter] = useState("");
@@ -35,38 +29,55 @@ function Invoices({
         .includes(invoiceNoFilter.toLowerCase());
 
       const matchesIssueDate =
-        !issueDateFilter ||
-        invoice.issueDate.toDate().toDateString() === issueDateFilter.toDateString();
+        !issueDateFilter || new Date(invoice.issueDate).toDateString() === issueDateFilter.toDateString();
 
       const matchesPaymentDate =
-        !paymentDateFilter ||
-        invoice.paymentDate.toDate().toDateString() === paymentDateFilter.toDateString();
+        !paymentDateFilter || new Date(invoice.paymentDate).toDateString() === paymentDateFilter.toDateString();
 
       return matchesSupplier && matchesInvoiceNo && matchesIssueDate && matchesPaymentDate;
     });
 
     if (sortOrder.field) {
       filtered = filtered.sort((a, b) => {
-        const dateA = a[sortOrder.field].toDate();
-        const dateB = b[sortOrder.field].toDate();
+        const dateA = new Date(a[sortOrder.field]);
+        const dateB = new Date(b[sortOrder.field]);
         return sortOrder.order === "asc" ? dateA - dateB : dateB - dateA;
       });
     }
 
     setFilteredInvoices(filtered);
-  }, [invoices, suppliers, supplierFilter, invoiceNoFilter, issueDateFilter, paymentDateFilter, sortOrder]);
-
+  }, [
+    invoices,
+    suppliers,
+    supplierFilter,
+    invoiceNoFilter,
+    issueDateFilter,
+    paymentDateFilter,
+    sortOrder,
+  ]);
+  
   const deleteInvoice = async (invoiceId) => {
     const confirmDelete = window.confirm("Sunteti sigur ca vreti sa stergeti aceasta factura?");
     if (!confirmDelete) return;
-
+  
     try {
+      // Delete the invoice from Firestore
       await deleteDoc(doc(db, "invoices", invoiceId));
-      setInvoices(prevInvoices => prevInvoices.filter(invoice => invoice.id !== invoiceId));
+      
+      // Update application state to remove the invoice
+      setInvoices((prevInvoices) => prevInvoices.filter((invoice) => invoice.id !== invoiceId));
+      
+      // Update localStorage to remove the invoice
+      const cachedInvoices = JSON.parse(localStorage.getItem("invoicesCache")) || [];
+      const updatedInvoicesCache = cachedInvoices.filter((invoice) => invoice.id !== invoiceId);
+      localStorage.setItem("invoicesCache", JSON.stringify(updatedInvoicesCache));
+      
+      console.log("Invoice deleted from both Firestore and localStorage.");
     } catch (error) {
       console.error("Error deleting invoice:", error);
     }
   };
+  
 
   const totalUnpaidSum = filteredInvoices
     .filter((invoice) => !invoice.paid)

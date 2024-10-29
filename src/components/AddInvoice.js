@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { collection, addDoc, getDocs, Timestamp } from "firebase/firestore";
+import { collection, addDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../styles/AddInvoice.css";
 import Supplier from "./Supplier";
+import moment from "moment";
 
-function AddInvoice({ isOpen, closeModal, setInvoices, projects }) {
+function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
   const [invoiceNo, setInvoiceNo] = useState("");
   const [totalSum, setTotalSum] = useState(0);
   const [issueDate, setIssueDate] = useState(new Date());
@@ -21,48 +22,60 @@ function AddInvoice({ isOpen, closeModal, setInvoices, projects }) {
     setLoading(true);
 
     try {
-      const invoicesSnapshot = await getDocs(collection(db, "invoices"));
-      const existingInvoice = invoicesSnapshot.docs.find(
-        (doc) => doc.data().invoiceNo === invoiceNo
-      );
-
+      // Check for existing invoice with the same invoice number
+      const existingInvoice = invoices.find((invoice) => invoice.invoiceNo === invoiceNo);
       if (existingInvoice) {
         alert("O factura cu acest numar de factura exista deja.");
         setLoading(false);
         return;
       }
 
-      const supid = selectedSupplier?.id;
+      // Add new invoice to Firestore
       const newInvoiceRef = await addDoc(collection(db, "invoices"), {
-        supplier: supid,
+        supplier: selectedSupplier?.id,
         invoiceNo,
         totalSum,
         remainingSum: totalSum,
-        issueDate,
-        paymentDate,
+        issueDate: Timestamp.fromDate(issueDate),
+        paymentDate: Timestamp.fromDate(paymentDate),
         project: selectedProject,
         paid: false,
       });
 
-      // Update the invoices state with the new invoice
-      setInvoices((prevInvoices) => [
-        ...prevInvoices,
-        {
-          id: newInvoiceRef.id,
-          supplier: supid,
-          invoiceNo,
-          totalSum,
-          remainingSum: totalSum,
-          issueDate: Timestamp.fromDate(issueDate),    // Ensure consistent format locally
-          paymentDate: Timestamp.fromDate(paymentDate), // Ensure consistent format locally
-          project: selectedProject,
-          paid: false,
-        },
-      ]);
+      // Fetch the newly added invoice document
+      const newInvoiceDoc = await getDoc(newInvoiceRef);
+      if (newInvoiceDoc.exists()) {
+        console.log("fetched 1")
+        const newInvoiceData = newInvoiceDoc.data();
+        const projectName = projects[selectedProject] || "N/A";
+        const paymentDate = newInvoiceData.paymentDate.toDate();
+
+        // Calculate paymentStatus based on paymentDate
+        const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
+          ? "Scadenta depasita"
+          : moment(paymentDate).isSame(moment(), "day")
+            ? "Scadenta astazi"
+            : "In termen";
+
+        // Add the new invoice to state and cache with paymentStatus
+        const newInvoice = {
+          id: newInvoiceDoc.id,
+          ...newInvoiceData,
+          projectName,
+          status: paymentStatus,
+        };
+
+        setInvoices((prevInvoices) => {
+          const updatedInvoices = [...prevInvoices, newInvoice];
+          localStorage.setItem("invoicesCache", JSON.stringify(updatedInvoices));
+          return updatedInvoices;
+        });
+      }
 
       setSuccessMessage("Factura a fost adaugata cu succes!");
       setTimeout(() => setSuccessMessage(""), 3000);
 
+      // Clear input fields and close modal
       closeModal();
       setSelectedSupplier(null);
       setInvoiceNo("");
@@ -75,9 +88,10 @@ function AddInvoice({ isOpen, closeModal, setInvoices, projects }) {
     }
   };
 
+
   if (!isOpen) return null;
 
-  // Convert projects object to an array of { id, name } for dropdown options
+  // Convert projects object to an array for dropdown options
   const projectOptions = Object.entries(projects).map(([id, name]) => ({
     id,
     name,

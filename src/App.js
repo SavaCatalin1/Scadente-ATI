@@ -25,14 +25,32 @@ function App() {
   const closeModal = () => setIsModalOpen(false);
 
   const fetchProjects = async () => {
+
+    const cachedProjects = JSON.parse(localStorage.getItem("projectsCache"));
+    const lastFetchTime = localStorage.getItem("projectsFetchTime");
+
+    // Check if projects are cached and within the refresh period
+    if (cachedProjects && Date.now() - lastFetchTime < 86400000) {
+      setProjects(cachedProjects);
+      setProjectsLoaded(true);
+      return;
+    }
+
+    // If no valid cache, fetch from Firebase
     try {
+      console.log("big fetch projects")
       const querySnapshot = await getDocs(collection(db, "projects"));
       const projectsMap = {};
       querySnapshot.forEach((doc) => {
         projectsMap[doc.id] = doc.data().name;
       });
+
       setProjects(projectsMap);
       setProjectsLoaded(true);
+
+      // Save projects to localStorage
+      localStorage.setItem("projectsCache", JSON.stringify(projectsMap));
+      localStorage.setItem("projectsFetchTime", Date.now());
     } catch (error) {
       if (error.code === "resource-exhausted") {
         setIsFirebaseQuotaExceeded(true);
@@ -45,7 +63,25 @@ function App() {
   const fetchInvoices = async () => {
     if (!projectsLoaded) return;
 
+    const cachedInvoices = JSON.parse(localStorage.getItem("invoicesCache"));
+    const lastFetchTime = localStorage.getItem("invoicesFetchTime");
+
+    // Check if invoices are cached and within the refresh period
+    if (cachedInvoices && Date.now() - lastFetchTime < 86400000) {
+      console.log("Using cached invoices from localStorage.");
+      const formattedInvoices = cachedInvoices.map((invoice) => ({
+        ...invoice,
+        // Ensure issueDate and paymentDate are converted back to Date objects
+        issueDate: new Date(invoice.issueDate),
+        paymentDate: new Date(invoice.paymentDate),
+      }));
+      setInvoices(formattedInvoices);
+      return;
+    }
+
+    console.log("Fetching invoices from Firebase...");
     try {
+      console.log("big fetch")
       const querySnapshot = await getDocs(collection(db, "invoices"));
       const allInvoices = [];
 
@@ -60,10 +96,28 @@ function App() {
             : "In termen";
 
         const projectName = projects[invoice.project] || "N/A";
-        allInvoices.push({ ...invoice, status: paymentStatus, projectName });
+        allInvoices.push({
+          ...invoice,
+          status: paymentStatus,
+          projectName,
+          issueDate: invoice.issueDate.toDate(),
+          paymentDate: invoice.paymentDate.toDate(),
+        });
       });
 
       setInvoices(allInvoices);
+
+      // Convert date fields to ISO strings before saving to localStorage
+      const cacheFriendlyInvoices = allInvoices.map((invoice) => ({
+        ...invoice,
+        issueDate: invoice.issueDate.toISOString(),
+        paymentDate: invoice.paymentDate.toISOString(),
+      }));
+
+      // Store invoices in localStorage
+      localStorage.setItem("invoicesCache", JSON.stringify(cacheFriendlyInvoices));
+      localStorage.setItem("invoicesFetchTime", Date.now());
+      console.log("Invoices cached in localStorage.");
     } catch (error) {
       if (error.code === "resource-exhausted") {
         setIsFirebaseQuotaExceeded(true);
@@ -77,15 +131,31 @@ function App() {
     const today = moment().endOf("day");
 
     return invoices.filter((invoice) => {
-      const paymentDate = moment(invoice.paymentDate.toDate());
+      // Ensure paymentDate is a Date object before using .toDate
+      const paymentDate = invoice.paymentDate instanceof Date
+        ? invoice.paymentDate
+        : new Date(invoice.paymentDate);
+
       return (
-        (paymentDate.isBefore(today, "day") || paymentDate.isSame(today, "day")) &&
+        (moment(paymentDate).isBefore(today, "day") || moment(paymentDate).isSame(today, "day")) &&
         !invoice.paid
       );
     });
   };
 
   useEffect(() => {
+    // Load cached projects and invoices on component mount
+    const cachedProjects = JSON.parse(localStorage.getItem("projectsCache"));
+    const cachedInvoices = JSON.parse(localStorage.getItem("invoicesCache"));
+    if (cachedProjects) {
+      setProjects(cachedProjects);
+      setProjectsLoaded(true);
+    }
+    if (cachedInvoices) {
+      setInvoices(cachedInvoices);
+    }
+
+    // Fetch projects from Firebase if needed
     fetchProjects();
   }, []);
 
@@ -94,6 +164,7 @@ function App() {
       fetchInvoices();
     }
   }, [projectsLoaded]);
+
 
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -190,6 +261,7 @@ function App() {
           closeModal={closeModal}
           projects={projects}
           setInvoices={setInvoices}
+          invoices={invoices}
         />
       </div>
     </Router>

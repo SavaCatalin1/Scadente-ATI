@@ -24,6 +24,7 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
     phone: "",
   });
   const dropdownRef = useRef(null);
+  const [localName, setLocalName] = useState("")
 
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -68,7 +69,7 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
 
   useEffect(() => {
     const debounceSearch = setTimeout(() => {
-      if (searchInput) {
+      if (searchInput && searchInput !== localName) {
         const filtered = suppliers.filter((supplier) =>
           supplier.name.toLowerCase().includes(searchInput.toLowerCase())
         );
@@ -83,10 +84,16 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
     return () => clearTimeout(debounceSearch);
   }, [searchInput, suppliers]);
 
+  const sanitizeCUI = (input) => {
+    // Check if input starts with "RO" (case-insensitive) and remove it if present
+    return input.toUpperCase().startsWith("RO") ? input.slice(2) : input;
+  };
+
   const fetchSupplierFromAPI = async () => {
     try {
+      const sanitizedCUI = sanitizeCUI(searchInput);
       const response = await axios.get(
-        `https://lista-firme.info/api/v1/info?cui=${searchInput}`
+        `https://lista-firme.info/api/v1/info?cui=${sanitizedCUI}`
       );
 
       if (response.data && response.status === 200) {
@@ -151,8 +158,9 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
 
   const handleSelectSupplier = (supplier) => {
     setSelectedSupplier(supplier);
-    setSearchInput(supplier.name);
-    setShowDropdown(false);
+    setShowDropdown(false); // Close dropdown before updating input
+    setSearchInput(supplier.name); // Set input after dropdown is hidden
+    setLocalName(supplier.name)
   };
 
   const handleKeyDown = (e) => {
@@ -200,9 +208,9 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
             <ul className="supplier-list">
               {filteredSuppliers.map((supplier, index) => (
                 <li
-                  key={index}
+                  key={supplier.id}
                   className={index === activeSuggestion ? "active" : ""}
-                  onClick={() => handleSelectSupplier(supplier)}
+                  onMouseDown={() => handleSelectSupplier(supplier)}
                 >
                   {supplier.name} ({supplier.cui})
                 </li>
@@ -212,8 +220,7 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
         )}
       </div>
 
-      {/* {error && <p className="error">{error}</p>} */}
-
+      {/* Modals for adding suppliers */}
       <Modal
         isOpen={showModal}
         onRequestClose={() => setShowModal(false)}
