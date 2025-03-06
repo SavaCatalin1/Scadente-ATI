@@ -338,6 +338,7 @@ function App() {
               element={
                 <Prediction
                   projects={projects}
+                  invoices={invoices}
                   suppliers={suppliers}
                   loading={loading}
                 />

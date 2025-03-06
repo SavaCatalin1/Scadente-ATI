@@ -7,44 +7,45 @@ import moment from "moment";
 import "../styles/Prediction.css";
 import InvoiceItem from "./InvoiceItem";
 
-function Prediction({ projects, suppliers, loading }) {
+function Prediction({ projects, invoices, suppliers, loading }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [predictedInvoices, setPredictedInvoices] = useState([]);
   const [totalSum, setTotalSum] = useState(0);
 
   // Fetch invoices up to the selected date and link with project names
-  const fetchPredictedInvoices = async () => {
+  const fetchPredictedInvoices = () => {
     if (!selectedDate) return;
 
     const selectedDateEndOfDay = moment(selectedDate).endOf("day").toDate();
 
-    const invoicesQuery = query(
-      collection(db, "invoices"),
-      where("paymentDate", "<=", selectedDateEndOfDay),
-      where("paid", "==", false)
+    const filteredInvoices = invoices.filter((invoice) => {
+      const paymentDate =
+        invoice.paymentDate instanceof Date
+          ? invoice.paymentDate
+          : new Date(invoice.paymentDate);
+      return (
+        (moment(paymentDate).isBefore(moment(selectedDateEndOfDay), "day") ||
+          moment(paymentDate).isSame(moment(selectedDateEndOfDay), "day")) &&
+        !invoice.paid
+      );
+    });
+
+    // For each invoice, add the corresponding projectName from the projects map.
+    const projectArray = Object.entries(projects);
+    const invoicesData = filteredInvoices.map((invoice) => {
+      const projectName =
+        projectArray.find(([id]) => id === invoice.project)?.[1] || "N/A";
+      return { ...invoice, projectName };
+    });
+
+    // Sum up the totalSum of the filtered invoices.
+    const sum = invoicesData.reduce(
+      (acc, curr) => acc + Number(curr.totalSum),
+      0
     );
 
-    try {
-      const invoicesSnapshot = await getDocs(invoicesQuery);
-      const invoicesData = [];
-      let sum = 0;
-
-      // Convert projects to an array of [id, name] pairs for easy lookup
-      const projectArray = Object.entries(projects);
-
-      invoicesSnapshot.forEach((doc) => {
-        const invoice = { id: doc.id, ...doc.data() };
-        // Find the project name by id
-        const projectName = projectArray.find(([id]) => id === invoice.project)?.[1] || "N/A";
-        invoicesData.push({ ...invoice, projectName });
-        sum += Number(invoice.totalSum);
-      });
-
-      setPredictedInvoices(invoicesData);
-      setTotalSum(sum);
-    } catch (error) {
-      console.error("Error fetching predicted invoices:", error);
-    }
+    setPredictedInvoices(invoicesData);
+    setTotalSum(sum);
   };
 
   return (
