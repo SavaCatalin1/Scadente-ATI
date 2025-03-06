@@ -167,7 +167,7 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
           <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
         </div>
       </div>
-
+        
       {loading ? (
         <p>Loading suppliers...</p>
       ) : (

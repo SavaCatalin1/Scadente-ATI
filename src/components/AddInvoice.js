@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { collection, addDoc, getDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../styles/AddInvoice.css";
 import Supplier from "./Supplier";
-import moment from "moment";
 
 function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -22,16 +21,19 @@ function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
     setLoading(true);
 
     try {
-      // Check for existing invoice with the same invoice number
-      const existingInvoice = invoices.find((invoice) => invoice.invoiceNo === invoiceNo);
+      // Check for an existing invoice with the same invoice number
+      const existingInvoice = invoices.find(
+        (invoice) => invoice.invoiceNo === invoiceNo
+      );
       if (existingInvoice) {
         alert("O factura cu acest numar de factura exista deja.");
         setLoading(false);
         return;
       }
 
-      // Add new invoice to Firestore
-      const newInvoiceRef = await addDoc(collection(db, "invoices"), {
+      // Add the new invoice to Firestore.
+      // The onSnapshot listener in App will automatically update the invoice list.
+      await addDoc(collection(db, "invoices"), {
         supplier: selectedSupplier?.id,
         invoiceNo,
         totalSum,
@@ -41,36 +43,6 @@ function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
         project: selectedProject,
         paid: false,
       });
-
-      // Fetch the newly added invoice document
-      const newInvoiceDoc = await getDoc(newInvoiceRef);
-      if (newInvoiceDoc.exists()) {
-        console.log("fetched 1")
-        const newInvoiceData = newInvoiceDoc.data();
-        const projectName = projects[selectedProject] || "N/A";
-        const paymentDate = newInvoiceData.paymentDate.toDate();
-
-        // Calculate paymentStatus based on paymentDate
-        const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
-          ? "Scadenta depasita"
-          : moment(paymentDate).isSame(moment(), "day")
-            ? "Scadenta astazi"
-            : "In termen";
-
-        // Add the new invoice to state and cache with paymentStatus
-        const newInvoice = {
-          id: newInvoiceDoc.id,
-          ...newInvoiceData,
-          projectName,
-          status: paymentStatus,
-        };
-
-        setInvoices((prevInvoices) => {
-          const updatedInvoices = [...prevInvoices, newInvoice];
-          localStorage.setItem("invoicesCache", JSON.stringify(updatedInvoices));
-          return updatedInvoices;
-        });
-      }
 
       setSuccessMessage("Factura a fost adaugata cu succes!");
       setTimeout(() => setSuccessMessage(""), 3000);

@@ -12,7 +12,7 @@ function Sidebar({ openModal }) {
         <ul className="sidebar-menu">
           <li className="sidebar-item">
             <Link to="/" className="sidebar-link">
-              Acasa
+              Scadente
             </Link>
           </li>
           <li className="sidebar-item">

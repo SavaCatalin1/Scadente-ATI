@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, Timestamp } from "firebase/firestore";
 import moment from "moment";
 import DatePicker from "react-datepicker";
@@ -14,30 +14,45 @@ import '../styles/InvoiceItem.css'
 const InvoiceItem = ({
   invoice,
   projects,
-  fetchInvoices,
-  fetchInvoicesHome,
-  fetchPredictedInvoices,
   deleteInvoice,
-  supplierName,
-  fetchInvoicesForProject,
-  selectedProject
+  supplierName
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false); // Toggle for payment history
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // State for payment modal
   const [paymentAmount, setPaymentAmount] = useState(""); // State for payment amount
+
+  // Local copy for editing and immediate feedback
   const [invoiceData, setInvoiceData] = useState({
     supplier: invoice.supplier,
     invoiceNo: invoice.invoiceNo,
     totalSum: invoice.totalSum,
-    remainingSum: invoice.remainingSum || invoice.totalSum, // Use totalSum if remainingSum is not set
+    remainingSum: invoice.remainingSum || invoice.totalSum,
     project: invoice.project,
     issueDate: invoice.issueDate instanceof Timestamp ? invoice.issueDate.toDate() : new Date(invoice.issueDate),
     paymentDate: invoice.paymentDate instanceof Timestamp ? invoice.paymentDate.toDate() : new Date(invoice.paymentDate),
-    paymentHistory: invoice.paymentHistory || [], // Payment history array
+    paymentHistory: invoice.paymentHistory || [],
+    paid: invoice.paid,
   });
 
   const [supplier, setSupplier] = useState("");
+
+  // Sync local state with the invoice prop when not editing
+  useEffect(() => {
+    if (!isEditing) {
+      setInvoiceData({
+        supplier: invoice.supplier,
+        invoiceNo: invoice.invoiceNo,
+        totalSum: invoice.totalSum,
+        remainingSum: invoice.remainingSum || invoice.totalSum,
+        project: invoice.project,
+        issueDate: invoice.issueDate instanceof Timestamp ? invoice.issueDate.toDate() : new Date(invoice.issueDate),
+        paymentDate: invoice.paymentDate instanceof Timestamp ? invoice.paymentDate.toDate() : new Date(invoice.paymentDate),
+        paymentHistory: invoice.paymentHistory || [],
+        paid: invoice.paid,
+      });
+    }
+  }, [invoice, isEditing]);
 
   const togglePaymentHistory = () => {
     setIsHistoryVisible(!isHistoryVisible); // Toggle payment history visibility
@@ -69,64 +84,52 @@ const InvoiceItem = ({
     }
   
     if (paymentAmountFloat > invoiceData.remainingSum) {
-      alert(
-        `Suma introdusa depaseste suma ramasa de plata (${invoiceData.remainingSum} LEI).`
-      );
+      alert(`Suma introdusa depaseste suma ramasa de plata (${invoiceData.remainingSum} LEI).`);
       return;
     }
   
     const paymentEntry = {
       amount: paymentAmountFloat,
-      date: Timestamp.fromDate(new Date()), // Use Firestore Timestamp for consistency
+      date: Timestamp.fromDate(new Date()),
     };
   
     // Calculate the new remaining sum
     let newRemainingSum = Number(invoiceData.remainingSum) - Number(paymentAmountFloat);
-    const isFullyPaid = newRemainingSum <= 0;
-  
-    // Ensure remainingSum is exactly 0 if fully paid
+    let isFullyPaid = newRemainingSum <= 0;
     if (isFullyPaid) {
       newRemainingSum = 0;
     }
   
     const invoiceRef = doc(db, "invoices", invoice.id);
     try {
-      // Update the invoice in Firestore
       await updateDoc(invoiceRef, {
         remainingSum: newRemainingSum,
-        paid: isFullyPaid, // Mark as fully paid if remainingSum is 0
-        paymentHistory: arrayUnion(paymentEntry), // Append the new payment entry
+        paid: isFullyPaid,
+        paymentHistory: arrayUnion(paymentEntry),
       });
   
-      // Update local state
+      // Optionally update local state for immediate feedback.
       setInvoiceData((prevData) => ({
         ...prevData,
         remainingSum: newRemainingSum,
         paid: isFullyPaid,
-        paymentHistory: [...prevData.paymentHistory, paymentEntry], // Update history locally
+        paymentHistory: [...prevData.paymentHistory, paymentEntry],
       }));
   
-      if (fetchInvoices) fetchInvoices();
-      if (fetchInvoicesHome) fetchInvoicesHome();
-      if (fetchPredictedInvoices) fetchPredictedInvoices();
-      if (fetchInvoicesForProject) fetchInvoicesForProject(selectedProject);
-      closePaymentModal(); // Close the modal after submission
+      closePaymentModal();
     } catch (error) {
       console.error("Error updating invoice status:", error);
     }
   };
+
+
   const markAsUnpaid = async (invoiceId) => {
-    const confirmPayment = window.confirm(
-      "Sunteti sigur ca vreti sa marcati ca neplatit?"
-    );
-    if (!confirmPayment) return;
+    // const confirmPayment = window.confirm("Sunteti sigur ca vreti sa marcati ca neplatit?");
+    // if (!confirmPayment) return;
 
     const invoiceRef = doc(db, "invoices", invoiceId);
     try {
       await updateDoc(invoiceRef, { paid: false });
-      fetchInvoices();
-      fetchInvoicesHome();
-      if (fetchPredictedInvoices) fetchPredictedInvoices();
     } catch (error) {
       console.error("Error updating invoice status:", error);
     }
@@ -135,22 +138,36 @@ const InvoiceItem = ({
   const saveInvoiceChanges = async () => {
     const invoiceRef = doc(db, "invoices", invoice.id);
     try {
+      // Compute the difference between the modified totalSum and the old totalSum
+      const oldTotal = Number(invoice.totalSum);
+      const newTotal = Number(invoiceData.totalSum);
+      const difference = newTotal - oldTotal;
+      
+      // If the invoice is already paid (remaining sum is 0), keep it at 0.
+      const updatedRemainingSum = invoice.paid || Number(invoice.remainingSum) === 0 
+        ? 0 
+        : Number(invoiceData.remainingSum) + difference;
+      
       await updateDoc(invoiceRef, {
         supplier: supplier.id,
         invoiceNo: invoiceData.invoiceNo,
-        totalSum: invoiceData.totalSum,
-        remainingSum: invoiceData.remainingSum,
+        totalSum: newTotal,
+        remainingSum: updatedRemainingSum,
         project: invoiceData.project,
         issueDate: Timestamp.fromDate(invoiceData.issueDate),
         paymentDate: Timestamp.fromDate(invoiceData.paymentDate),
       });
+      // Update local state to reflect changes immediately
+      setInvoiceData((prevData) => ({
+        ...prevData,
+        remainingSum: updatedRemainingSum,
+      }));
       setIsEditing(false);
-      fetchInvoices();
-      fetchInvoicesHome();
     } catch (error) {
       console.error("Error saving changes:", error);
     }
   };
+
 
   const deletePayment = async (payment, invoiceId) => {
     const confirmDelete = window.confirm(
@@ -158,35 +175,30 @@ const InvoiceItem = ({
     );
     if (!confirmDelete) return;
   
-    // Calculate the new remaining sum after deleting the payment
-    const newRemainingSum = Number(invoiceData.remainingSum) + Number(payment.amount);
-    const isUnpaid = newRemainingSum > 0; // Mark as unpaid if remaining sum is greater than 0
+    const newRemainingSum = Number(invoice.remainingSum) + Number(payment.amount);
+    const isUnpaid = newRemainingSum > 0;
   
     const invoiceRef = doc(db, "invoices", invoiceId);
     try {
-      // Update the invoice in Firestore to remove the payment and adjust remaining sum
       await updateDoc(invoiceRef, {
         remainingSum: newRemainingSum,
-        paid: false, // Always mark as unpaid when a payment is deleted
-        paymentHistory: arrayRemove(payment), // Remove the payment from history
+        paid: false,
+        paymentHistory: arrayRemove(payment),
       });
   
-      // Update local state
       setInvoiceData((prevData) => ({
         ...prevData,
         remainingSum: newRemainingSum,
-        paid: isUnpaid, // Update local state to reflect unpaid status
+        paid: isUnpaid,
         paymentHistory: prevData.paymentHistory.filter(
           (p) => p.date.toString() !== payment.date.toString()
-        ), // Remove payment locally
+        ),
       }));
-  
-      if (fetchInvoices) fetchInvoices();
-      if (fetchInvoicesHome) fetchInvoicesHome();
-      if (fetchPredictedInvoices) fetchPredictedInvoices();
-      if (fetchInvoicesForProject) fetchInvoicesForProject(selectedProject);
     } catch (error) {
       console.error("Error deleting payment:", error);
+    }
+    finally{
+      markAsUnpaid(invoiceId);
     }
   };
 
@@ -196,7 +208,7 @@ const InvoiceItem = ({
         <>
           {/* Edit Mode */}
           <div className="invitm-div">
-            <Supplier setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier}/>
+            <Supplier setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier} />
 
             <label>
               <b>Numar factura:</b>
@@ -353,12 +365,12 @@ const InvoiceItem = ({
                     onClick={() => setIsEditing(true)}
                     className="pointer"
                   />
-                  {invoice.paid && (
+                  {/* {invoice.paid && (
                     <HistoryIcon
                       onClick={() => markAsUnpaid(invoice.id)}
                       className="pointer"
                     />
-                  )}
+                  )} */}
                   <DeleteIcon
                     onClick={() => deleteInvoice(invoice.id)}
                     className="pointer"

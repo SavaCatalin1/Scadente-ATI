@@ -5,7 +5,7 @@ import Homepage from "./components/Homepage";
 import "./App.css";
 import Invoices from "./components/Invoices";
 import AddInvoice from "./components/AddInvoice";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, onSnapshot, Timestamp } from "firebase/firestore";
 import moment from "moment";
 import { db } from "./firebase";
 import Prediction from "./components/Prediction";
@@ -24,6 +24,7 @@ function App() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  // fetch projects start
   const fetchProjects = async () => {
 
     const cachedProjects = JSON.parse(localStorage.getItem("projectsCache"));
@@ -59,74 +60,162 @@ function App() {
       }
     }
   };
+// fetch projects end
 
-  const fetchInvoices = async () => {
-    if (!projectsLoaded) return;
 
-    const cachedInvoices = JSON.parse(localStorage.getItem("invoicesCache"));
-    const lastFetchTime = localStorage.getItem("invoicesFetchTime");
+// //fetch invoices start
+//   const fetchInvoices = async () => {
+//     if (!projectsLoaded) return;
 
-    // Check if invoices are cached and within the refresh period
-    if (cachedInvoices && Date.now() - lastFetchTime < 86400000) {
-      console.log("Using cached invoices from localStorage.");
-      const formattedInvoices = cachedInvoices.map((invoice) => ({
-        ...invoice,
-        // Ensure issueDate and paymentDate are converted back to Date objects
-        issueDate: new Date(invoice.issueDate),
-        paymentDate: new Date(invoice.paymentDate),
-      }));
-      setInvoices(formattedInvoices);
-      return;
+//     const cachedInvoices = JSON.parse(localStorage.getItem("invoicesCache"));
+//     const lastFetchTime = localStorage.getItem("invoicesFetchTime");
+
+//     // Check if invoices are cached and within the refresh period
+//     if (cachedInvoices && Date.now() - lastFetchTime < 86400000) {
+//       console.log("Using cached invoices from localStorage.");
+//       const formattedInvoices = cachedInvoices.map((invoice) => ({
+//         ...invoice,
+//         // Ensure issueDate and paymentDate are converted back to Date objects
+//         issueDate: invoice.issueDate ? new Date(invoice.issueDate) : null,
+//         paymentDate: invoice.paymentDate ? new Date(invoice.paymentDate) : null,
+//       }));
+
+//       formattedInvoices.sort((a, b) => new Date(b.issueDate) - new Date(a.issueDate));
+//       setInvoices(formattedInvoices);
+//       return;
+//     }
+
+//     console.log("Fetching invoices from Firebase...");
+//     try {
+//       console.log("big fetch")
+//       const querySnapshot = await getDocs(collection(db, "invoices"));
+//       const allInvoices = [];
+
+//       querySnapshot.forEach((doc) => {
+//         const invoice = { id: doc.id, ...doc.data() };
+
+//         const issueDate = invoice.issueDate
+//           ? invoice.issueDate instanceof Timestamp
+//             ? invoice.issueDate.toDate()
+//             : new Date(invoice.issueDate)
+//           : null;  // Handle null values
+
+//         const paymentDate = invoice.paymentDate
+//           ? invoice.paymentDate instanceof Timestamp
+//             ? invoice.paymentDate.toDate()
+//             : new Date(invoice.paymentDate)
+//           : null;
+
+
+//         const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
+//           ? "Scadenta depasita"
+//           : moment(paymentDate).isSame(moment(), "day")
+//             ? "Scadenta astazi"
+//             : "In termen";
+
+//         const projectName = projects[invoice.project] || "N/A";
+//         allInvoices.push({
+//           ...invoice,
+//           status: paymentStatus,
+//           projectName,
+//           issueDate,
+//           paymentDate
+//         });
+//       });
+
+//       allInvoices.sort((a, b) => new Date(b.issueDate) - new Date(a.issueDate));
+
+//       setInvoices(allInvoices);
+
+//       // Convert date fields to ISO strings before saving to localStorage
+//       const cacheFriendlyInvoices = allInvoices.map((invoice) => ({
+//         ...invoice,
+//         issueDate: invoice.issueDate.toISOString(),
+//         paymentDate: invoice.paymentDate.toISOString(),
+//       }));
+
+//       // Store invoices in localStorage
+//       localStorage.setItem("invoicesCache", JSON.stringify(cacheFriendlyInvoices));
+//       localStorage.setItem("invoicesFetchTime", Date.now());
+//       console.log("Invoices cached in localStorage.");
+//     } catch (error) {
+//       if (error.code === "resource-exhausted") {
+//         setIsFirebaseQuotaExceeded(true);
+//       } else {
+//         console.error("Firebase error:", error);
+//       }
+//     }
+//   };
+// //fetch invoices end
+
+  // Set up real‑time listener for invoices using onSnapshot
+  useEffect(() => {
+    if (projectsLoaded) {
+      console.log("Setting up real‑time listener for invoices...");
+      const unsubscribe = onSnapshot(
+        collection(db, "invoices"),
+        (snapshot) => {
+          const allInvoices = snapshot.docs.map((doc) => {
+            const invoice = { id: doc.id, ...doc.data() };
+
+            const issueDate = invoice.issueDate
+              ? (invoice.issueDate instanceof Timestamp
+                  ? invoice.issueDate.toDate()
+                  : new Date(invoice.issueDate))
+              : null;
+
+            const paymentDate = invoice.paymentDate
+              ? (invoice.paymentDate instanceof Timestamp
+                  ? invoice.paymentDate.toDate()
+                  : new Date(invoice.paymentDate))
+              : null;
+
+            const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
+              ? "Scadenta depasita"
+              : moment(paymentDate).isSame(moment(), "day")
+              ? "Scadenta astazi"
+              : "In termen";
+
+            const projectName = projects[invoice.project] || "N/A";
+
+            return {
+              ...invoice,
+              issueDate,
+              paymentDate,
+              status: paymentStatus,
+              projectName,
+            };
+          });
+
+          // Sort invoices by issue date descending
+          allInvoices.sort((a, b) => new Date(b.issueDate) - new Date(a.issueDate));
+          setInvoices(allInvoices);
+
+          // Optionally update localStorage for caching purposes
+          localStorage.setItem("invoicesCache", JSON.stringify(
+            allInvoices.map((invoice) => ({
+              ...invoice,
+              issueDate: invoice.issueDate ? invoice.issueDate.toISOString() : null,
+              paymentDate: invoice.paymentDate ? invoice.paymentDate.toISOString() : null,
+            }))
+          ));
+          localStorage.setItem("invoicesFetchTime", Date.now());
+        },
+        (error) => {
+          if (error.code === "resource-exhausted") {
+            setIsFirebaseQuotaExceeded(true);
+          } else {
+            console.error("Error with onSnapshot for invoices:", error);
+          }
+        }
+      );
+
+      return () => unsubscribe();
     }
+  }, [projectsLoaded, projects]);
 
-    console.log("Fetching invoices from Firebase...");
-    try {
-      console.log("big fetch")
-      const querySnapshot = await getDocs(collection(db, "invoices"));
-      const allInvoices = [];
 
-      querySnapshot.forEach((doc) => {
-        const invoice = { id: doc.id, ...doc.data() };
-        const paymentDate = invoice.paymentDate.toDate();
-
-        const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
-          ? "Scadenta depasita"
-          : moment(paymentDate).isSame(moment(), "day")
-            ? "Scadenta astazi"
-            : "In termen";
-
-        const projectName = projects[invoice.project] || "N/A";
-        allInvoices.push({
-          ...invoice,
-          status: paymentStatus,
-          projectName,
-          issueDate: invoice.issueDate.toDate(),
-          paymentDate: invoice.paymentDate.toDate(),
-        });
-      });
-
-      setInvoices(allInvoices);
-
-      // Convert date fields to ISO strings before saving to localStorage
-      const cacheFriendlyInvoices = allInvoices.map((invoice) => ({
-        ...invoice,
-        issueDate: invoice.issueDate.toISOString(),
-        paymentDate: invoice.paymentDate.toISOString(),
-      }));
-
-      // Store invoices in localStorage
-      localStorage.setItem("invoicesCache", JSON.stringify(cacheFriendlyInvoices));
-      localStorage.setItem("invoicesFetchTime", Date.now());
-      console.log("Invoices cached in localStorage.");
-    } catch (error) {
-      if (error.code === "resource-exhausted") {
-        setIsFirebaseQuotaExceeded(true);
-      } else {
-        console.error("Firebase error:", error);
-      }
-    }
-  };
-
+//get home invoices start
   const getHomeInvoices = () => {
     const today = moment().endOf("day");
 
@@ -142,7 +231,10 @@ function App() {
       );
     });
   };
+// get home invoices end
 
+
+//load cached projects and invoices start
   useEffect(() => {
     // Load cached projects and invoices on component mount
     const cachedProjects = JSON.parse(localStorage.getItem("projectsCache"));
@@ -152,20 +244,27 @@ function App() {
       setProjectsLoaded(true);
     }
     if (cachedInvoices) {
-      setInvoices(cachedInvoices);
+      setInvoices(cachedInvoices.map((invoice) => ({
+        ...invoice,
+        issueDate: new Date(invoice.issueDate),
+        paymentDate: new Date(invoice.paymentDate),
+      })));
     }
 
     // Fetch projects from Firebase if needed
     fetchProjects();
   }, []);
+  //load cached projects and invoices end
 
-  useEffect(() => {
-    if (projectsLoaded) {
-      fetchInvoices();
-    }
-  }, [projectsLoaded]);
+  //make sure projects before invoices loaded start
+  // useEffect(() => {
+  //   if (projectsLoaded) {
+  //     fetchInvoices();
+  //   }
+  // }, [projectsLoaded]);
+  //make sure projects before invoices loaded end
 
-
+//fetch suppliers start
   useEffect(() => {
     const fetchSuppliers = async () => {
       setLoading(true);
@@ -188,6 +287,8 @@ function App() {
 
     fetchSuppliers();
   }, [invoices]);
+//fetch suppliers end
+
 
   if (isFirebaseQuotaExceeded) {
     return (
