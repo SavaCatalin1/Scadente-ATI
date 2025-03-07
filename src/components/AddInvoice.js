@@ -23,7 +23,8 @@ function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
     try {
       // Check for an existing invoice with the same invoice number
       const existingInvoice = invoices.find(
-        (invoice) => invoice.invoiceNo === invoiceNo
+        (invoice) => invoice.invoiceNo === invoiceNo &&
+          invoice.supplier === selectedSupplier?.id
       );
       if (existingInvoice) {
         alert("O factura cu acest numar de factura exista deja.");
