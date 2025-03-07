@@ -1,45 +1,49 @@
-import React, { useState, useEffect } from "react";
-import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import React, { useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import moment from "moment";
 import "../styles/Projects.css";
 import AddProjectModal from "./AddProject";
 import InvoiceItem from "./InvoiceItem";
 
-function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
+function Projects({ projects, setProjects, suppliers, loading, invoices }) {
   const [selectedProject, setSelectedProject] = useState(null);
-  const [invoices, setProjectInvoices] = useState([]);
+  const [projectInvoices, setProjectInvoices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [showProjects, setShowProjects] = useState(true);
 
-  // Fetch all invoices for the selected project
-  const fetchInvoicesForProject = async (projectId) => {
+  // Sort projects alphabetically by project name
+  const sortedProjects = projects.slice().sort((a, b) =>
+    a[1].localeCompare(b[1])
+  );
+
+  // Filter the passed invoices for the selected project
+  const fetchInvoicesForProject = (projectId) => {
     setSelectedProject(projectId);
     setShowProjects(false);
-
-    try {
-      const q = query(collection(db, "invoices"), where("project", "==", projectId));
-      const querySnapshot = await getDocs(q);
-
-      const projectName = projects.find(([id]) => id === projectId)?.[1] || "Unknown Project";
-
-      const invoiceList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        projectName,
-      }));
-
-      setProjectInvoices(invoiceList);
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-    }
+    const filtered = invoices.filter(
+      (invoice) => invoice.project === projectId
+    );
+    const projectName =
+      projects.find(([id]) => id === projectId)?.[1] || "Unknown Project";
+    const invoiceList = filtered.map((invoice) => ({
+      ...invoice,
+      projectName,
+    }));
+    setProjectInvoices(invoiceList);
   };
 
-  // Calculate total and unpaid sums
-  const total = invoices.reduce((acc, invoice) => acc + Number(invoice.totalSum), 0);
-  const unpaidTotal = invoices.reduce((acc, invoice) => acc + Number(invoice.remainingSum), 0);
+  // Calculate total and unpaid sums based on projectInvoices
+  const total = projectInvoices.reduce(
+    (acc, invoice) => acc + Number(invoice.totalSum),
+    0
+  );
+  const unpaidTotal = projectInvoices.reduce(
+    (acc, invoice) => acc + Number(invoice.remainingSum),
+    0
+  );
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -66,7 +70,9 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
 
       // Update the projects state locally to reflect the new name
       setProjects((prevProjects) =>
-        prevProjects.map(([id, name]) => (id === selectedProject ? [id, newProjectName.trim()] : [id, name]))
+        prevProjects.map(([id, name]) =>
+          id === selectedProject ? [id, newProjectName.trim()] : [id, name]
+        )
       );
     } catch (error) {
       console.error("Error updating project name:", error);
@@ -83,7 +89,7 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
       </div>
 
       {selectedProject && !showProjects && (
-        <div className={`selected`}>
+        <div className="selected">
           <div className="da">
             <div className="project-item-icon">📁</div>
             {isEditingProjectName ? (
@@ -102,8 +108,13 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
             </button>
           ) : (
             <div>
-              <button onClick={saveProjectName} className="edit-button ml">Save</button>
-              <button onClick={() => setIsEditingProjectName(false)} className="edit-button ml">
+              <button onClick={saveProjectName} className="edit-button ml">
+                Save
+              </button>
+              <button
+                onClick={() => setIsEditingProjectName(false)}
+                className="edit-button ml"
+              >
                 Cancel
               </button>
             </div>
@@ -120,10 +131,11 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
       {showProjects && (
         <div className="projects-list">
           <ul>
-            {projects?.map(([projectId, projectName]) => (
+            {sortedProjects.map(([projectId, projectName]) => (
               <li
                 key={projectId}
-                className={`${projectId === selectedProject ? "selected" : "project-item"}`}
+                className={`${projectId === selectedProject ? "selected" : "project-item"
+                  }`}
                 onClick={() => fetchInvoicesForProject(projectId)}
               >
                 <div>
@@ -137,9 +149,11 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
       )}
 
       <div className="invoices-section">
-        {selectedProject && (
+        {selectedProject && !showProjects && (
           <>
-            <h3 className="invoices-header">Facturi pentru proiectul selectat</h3>
+            <h3 className="invoices-header">
+              Facturi pentru proiectul selectat
+            </h3>
 
             <div className="total-sums">
               <div>
@@ -152,27 +166,33 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
               </div>
             </div>
 
-            {invoices.length > 0 ? (
+            {projectInvoices.length > 0 ? (
               <ul className="invoice-list">
-                {invoices.map((invoice) => {
-                  const issueDateFormatted = invoice.issueDate?.toDate
-                    ? moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")
-                    : moment(invoice.issueDate).format("DD-MM-YYYY");
+                {loading ? (
+                  <p>Loading suppliers...</p>
+                ) : (
+                  projectInvoices.map((invoice) => {
+                    const issueDateFormatted = invoice.issueDate?.toDate
+                      ? moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")
+                      : moment(invoice.issueDate).format("DD-MM-YYYY");
 
-                  const paymentDateFormatted = invoice.paymentDate?.toDate
-                    ? moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")
-                    : moment(invoice.paymentDate).format("DD-MM-YYYY");
+                    const paymentDateFormatted = invoice.paymentDate?.toDate
+                      ? moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")
+                      : moment(invoice.paymentDate).format("DD-MM-YYYY");
 
-                  return (
-                    loading ? <p>Loading suppliers...</p> : <InvoiceItem
-                      key={invoice.id}
-                      invoice={invoice}
-                      projects={projects}
-                      supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
-                      selectedProject={selectedProject}
-                    />
-                  );
-                })}
+                    return (
+                      <InvoiceItem
+                        key={invoice.id}
+                        invoice={invoice}
+                        projects={projects}
+                        supplierName={
+                          suppliers[invoice.supplier] || "Unknown Supplier"
+                        }
+                        selectedProject={selectedProject}
+                      />
+                    );
+                  })
+                )}
               </ul>
             ) : (
               <p>Nu exista facturi pentru acest proiect.</p>
@@ -181,7 +201,11 @@ function Projects({ projects, setProjects, setInvoices, suppliers, loading }) {
         )}
       </div>
 
-      <AddProjectModal isOpen={isModalOpen} closeModal={closeModal} setProjects={setProjects} />
+      <AddProjectModal
+        isOpen={isModalOpen}
+        closeModal={closeModal}
+        setProjects={setProjects}
+      />
     </div>
   );
 }

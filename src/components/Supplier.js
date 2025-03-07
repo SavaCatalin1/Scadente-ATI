@@ -26,6 +26,11 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
   const dropdownRef = useRef(null);
   const [localName, setLocalName] = useState("")
 
+  const sanitizeCUI = (input) => {
+    // Check if input starts with "RO" (case-insensitive) and remove it if present
+    return input.toUpperCase().startsWith("RO") ? input.slice(2) : input;
+  };
+
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
@@ -70,8 +75,10 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
   useEffect(() => {
     const debounceSearch = setTimeout(() => {
       if (searchInput && searchInput !== localName) {
+        const lowerInput = sanitizeCUI(searchInput).toLowerCase();
         const filtered = suppliers.filter((supplier) =>
-          supplier.name.toLowerCase().includes(searchInput.toLowerCase())
+          supplier.name.toLowerCase().includes(lowerInput) ||
+          (supplier.cui && supplier.cui.toLowerCase().includes(lowerInput))
         );
         setFilteredSuppliers(filtered);
         setShowDropdown(true);
@@ -82,12 +89,9 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
     }, 300);
 
     return () => clearTimeout(debounceSearch);
-  }, [searchInput, suppliers]);
+  }, [searchInput, suppliers, localName]);
 
-  const sanitizeCUI = (input) => {
-    // Check if input starts with "RO" (case-insensitive) and remove it if present
-    return input.toUpperCase().startsWith("RO") ? input.slice(2) : input;
-  };
+
 
   const fetchSupplierFromAPI = async () => {
     try {
@@ -201,7 +205,7 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
+          // onBlur={handleBlur}
         />
         {showDropdown && filteredSuppliers.length > 0 && (
           <div className="supplier-dropdown">
