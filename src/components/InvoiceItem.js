@@ -6,7 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { db } from "../firebase";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import HistoryIcon from "@mui/icons-material/History";
+// import HistoryIcon from "@mui/icons-material/History";
 import Modal from "react-modal";
 import Supplier from "./Supplier";
 import '../styles/InvoiceItem.css'
@@ -201,16 +201,18 @@ const InvoiceItem = ({
       markAsUnpaid(invoiceId);
     }
   };
-
+console.log(projects)
   return (
     <li className="invoice-item" key={invoice.id}>
       {isEditing ? (
         <>
           {/* Edit Mode */}
           <div className="invitm-div">
-            <Supplier setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier} />
+            <div className="item-size">
+            <Supplier setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier} style={true}/>
+            </div>
 
-            <label>
+            <label className="item-size">
               <b>Numar factura:</b>
               <input
                 value={invoiceData.invoiceNo}
@@ -220,7 +222,7 @@ const InvoiceItem = ({
               />
             </label>
 
-            <label>
+            <label className="item-size">
               <b>Total:</b>
               <input
                 type="number"
@@ -231,7 +233,7 @@ const InvoiceItem = ({
               />
             </label>
 
-            <label>
+            <label className="item-size">
               <b>Proiect:</b>
               <select
                 value={invoiceData.project}

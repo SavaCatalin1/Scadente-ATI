@@ -7,6 +7,7 @@
   z-index: 9999; /* Higher z-index to go over other elements */
   width: 100%; /* Make sure the dropdown matches the width of the input */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add subtle shadow for better visibility */
+  max-width:400px;
 }
 
 .supplier-list {

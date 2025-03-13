@@ -79,21 +79,21 @@ function App() {
 
             const issueDate = invoice.issueDate
               ? (invoice.issueDate instanceof Timestamp
-                  ? invoice.issueDate.toDate()
-                  : new Date(invoice.issueDate))
+                ? invoice.issueDate.toDate()
+                : new Date(invoice.issueDate))
               : null;
 
             const paymentDate = invoice.paymentDate
               ? (invoice.paymentDate instanceof Timestamp
-                  ? invoice.paymentDate.toDate()
-                  : new Date(invoice.paymentDate))
+                ? invoice.paymentDate.toDate()
+                : new Date(invoice.paymentDate))
               : null;
 
             const paymentStatus = moment(paymentDate).isBefore(moment(), "day")
               ? "Scadenta depasita"
               : moment(paymentDate).isSame(moment(), "day")
-              ? "Scadenta astazi"
-              : "In termen";
+                ? "Scadenta astazi"
+                : "In termen";
 
             const projectName = projects[invoice.project] || "N/A";
 
@@ -208,7 +208,7 @@ function App() {
               path="/invoices"
               element={
                 <Invoices
-                  projects={Object.entries(projects)}
+                  projects={Object.entries(projects).sort((a, b) => a[1].localeCompare(b[1]))}
                   invoices={invoices}
                   suppliers={suppliers}
                   loading={loading}
@@ -220,7 +220,7 @@ function App() {
               path="/prediction"
               element={
                 <Prediction
-                  projects={projects}
+                  projects={Object.entries(projects).sort((a, b) => a[1].localeCompare(b[1]))}
                   invoices={invoices}
                   suppliers={suppliers}
                   loading={loading}
@@ -231,7 +231,7 @@ function App() {
               path="/projects"
               element={
                 <Projects
-                  projects={Object.entries(projects)}
+                  projects={Object.entries(projects).sort((a, b) => a[1].localeCompare(b[1]))}
                   invoices={invoices}
                   suppliers={suppliers}
                   loading={loading}
@@ -245,7 +245,7 @@ function App() {
         <AddInvoice
           isOpen={isModalOpen}
           closeModal={closeModal}
-          projects={projects}
+          projects={Object.entries(projects).sort((a, b) => a[1].localeCompare(b[1]))}
           setInvoices={setInvoices}
           invoices={invoices}
         />

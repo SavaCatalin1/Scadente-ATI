@@ -7,7 +7,7 @@ import "../styles/Supplier.css"; // Add custom styles for the modals here
 
 Modal.setAppElement("#root");
 
-function Supplier({ setSelectedSupplier, selectedSupplier }) {
+function Supplier({ setSelectedSupplier, selectedSupplier,style }) {
   const [searchInput, setSearchInput] = useState("");
   const [suppliers, setSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
@@ -196,7 +196,7 @@ function Supplier({ setSelectedSupplier, selectedSupplier }) {
   };
 
   return (
-    <div className="supplier-container" ref={dropdownRef}>
+    <div className={!style ?"supplier-container": "item-size"} ref={dropdownRef}>
       <label className="modal-label">Furnizor</label>
       <div className="supplier-search">
         <input

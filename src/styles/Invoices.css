@@ -59,10 +59,13 @@
 
 .invitm-div {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
   padding-left: 0.5rem;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.item-size{
+  width: 15rem;
 }
 
 .invoice-item label {
