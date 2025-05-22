@@ -21,7 +21,7 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
     let filtered = invoices.filter((invoice) => {
       const supplierName = suppliers[invoice.supplier] || invoice.supplier;
       const matchesSupplier = supplierName
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(supplierFilter.toLowerCase());
 
       const matchesInvoiceNo = invoice.invoiceNo
@@ -55,29 +55,29 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
     paymentDateFilter,
     sortOrder,
   ]);
-  
+
   const deleteInvoice = async (invoiceId) => {
     const confirmDelete = window.confirm("Sunteti sigur ca vreti sa stergeti aceasta factura?");
     if (!confirmDelete) return;
-  
+
     try {
       // Delete the invoice from Firestore
       await deleteDoc(doc(db, "invoices", invoiceId));
-      
+
       // Update application state to remove the invoice
       setInvoices((prevInvoices) => prevInvoices.filter((invoice) => invoice.id !== invoiceId));
-      
+
       // Update localStorage to remove the invoice
       const cachedInvoices = JSON.parse(localStorage.getItem("invoicesCache")) || [];
       const updatedInvoicesCache = cachedInvoices.filter((invoice) => invoice.id !== invoiceId);
       localStorage.setItem("invoicesCache", JSON.stringify(updatedInvoicesCache));
-      
+
       console.log("Invoice deleted from both Firestore and localStorage.");
     } catch (error) {
       console.error("Error deleting invoice:", error);
     }
   };
-  
+
 
   const totalUnpaidSum = filteredInvoices
     .filter((invoice) => !invoice.paid)
@@ -167,7 +167,7 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
           <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
         </div>
       </div>
-        
+
       {loading ? (
         <p>Loading suppliers...</p>
       ) : (
