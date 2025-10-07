@@ -348,8 +348,9 @@
 .view {
   width: 20%;
 }
+.filters-dropdown { position: relative; display: inline-block; }
+
 .filters-button {
-  position: relative; /* Relative to allow positioning the filters section */
   background-color: #007bff;
   color: white;
   border: none;
@@ -358,6 +359,9 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  /* Prevent layout shift when label text changes */
+  min-width: 11.5rem; /* enough space for both labels */
+  justify-content: center;
 }
 
 .filters-button:hover {
@@ -365,16 +369,16 @@
 }
 
 .filters-section {
-  position: absolute; /* Absolute positioning to overlay the content */
-  top: 5rem; /* Distance from the button */
-  left: 47%; /* Start from the left of the button */
+  position: absolute;
+  top: calc(100% + 8px); /* directly under button with small gap */
+  left: 0;
   background-color: #f9f9f9;
   border: 1px solid #ccc;
   padding: 15px;
   border-radius: 4px;
-  z-index: 1000; /* Ensure it appears above other content */
-  width: 20%; /* Full width dropdown */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  width: 320px; /* fixed width for consistent layout */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .clear-filters-button {
@@ -488,6 +492,16 @@
   font-weight: 600;
 }
 
+.status-messages {
+  min-height: 1.2rem; /* reserve space for one line of message */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  width: 100%;
+  overflow: hidden;
+}
+
 /* Dedupe button */
 .dedupe-button {
   background-color: #e67e22;
@@ -509,4 +523,18 @@
   font-size: .8rem;
   color: #e67e22;
   font-weight: 600;
+}
+
+/* Prevent width shifts for totals / messages */
+.totals-area {
+  flex: 0 0 260px; /* fixed space so center area doesn't reflow */
+  max-width: 260px;
+  position: relative;
+}
+
+.bulk-pay-message, .dedupe-message {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

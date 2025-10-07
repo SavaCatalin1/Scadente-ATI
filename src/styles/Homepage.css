@@ -18,6 +18,13 @@
   border-radius: 1rem;
 }
 
+/* Reserve width for changing invoice count to prevent horizontal jitter */
+.invoice-count {
+  display: inline-block;
+  min-width: 3ch; /* enough space for up to 3 digit counts \\*/
+  text-align: center;
+}
+
 .invoice-list {
   list-style-type: none;
   padding: 0;

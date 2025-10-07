@@ -288,8 +288,8 @@ console.log(projects)
         <>
           {/* View Mode */}
           <div className="invitm-div">
-            <span className="view">
-              <b>Furnizor:</b> {supplierName}
+            <span className="view supplier-cell">
+              <b>Furnizor:</b> <span className="supplier-text-full">{supplierName}</span>
             </span>
             <span className="view">
               <b>Numar factura:</b> {invoice.invoiceNo}
@@ -323,36 +323,42 @@ console.log(projects)
             </button>
           </div>
 
-          {isHistoryVisible && invoiceData.paymentHistory.length > 0 && (
-            <div className="payment-history">
-              <b>Istoric plati:</b>
-              <ul>
-                {invoiceData.paymentHistory.map((payment, index) => (
-                  <li key={index}>
-                    {moment(payment.date.toDate()).format("DD-MM-YYYY")}:{" "}
-                    <span className="payment-amount">{payment.amount} LEI</span>
-                    <button
-                      className="delete-payment-btn"
-                      onClick={() => deletePayment(payment, invoice.id)}
-                    >
-                      Sterge
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className={`payment-history-wrapper ${isHistoryVisible && invoiceData.paymentHistory.length > 0 ? 'open' : ''}`}>
+            {isHistoryVisible && invoiceData.paymentHistory.length > 0 && (
+              <div className="payment-history">
+                <b>Istoric plati:</b>
+                <ul>
+                  {invoiceData.paymentHistory.map((payment, index) => (
+                    <li key={index}>
+                      {moment(payment.date.toDate()).format("DD-MM-YYYY")}: {" "}
+                      <span className="payment-amount">{payment.amount} LEI</span>
+                      <button
+                        className="delete-payment-btn"
+                        onClick={() => deletePayment(payment, invoice.id)}
+                      >
+                        Sterge
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
 
           <div className="delete-flex invitm-div">
             {invoice.status && (
-              <span
-                className={`status ${invoice.paid
-                  ? "platit"
-                  : invoice.status.replace(/\s+/g, "-").toLowerCase()
-                  }`}
-              >
-                <b>Status:</b> {invoice.paid ? "Platit" : invoice.status}
-              </span>
+              <div className="status-badge-wrapper">
+                <span className="status-label">Status</span>
+                <span
+                  className={`status-pill ${invoice.paid
+                    ? "pill-platit"
+                    : invoice.status.replace(/\s+/g, "-").toLowerCase()
+                    }`}
+                  aria-label={`Status factura: ${invoice.paid ? "Platit" : invoice.status}`}
+                >
+                  {invoice.paid ? "Platit" : invoice.status}
+                </span>
+              </div>
             )}
 
             <div className="tools invitm-div">

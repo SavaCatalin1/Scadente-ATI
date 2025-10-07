@@ -118,27 +118,53 @@
     background-color: #2980b9;
   }
   
-  .status {
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-weight: bold;
-    color: white;
+  /* New status badge system */
+  .status-badge-wrapper {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    width: 12.5rem; /* Reserve stable width (label + pill) to prevent layout shift */
   }
-  
-  .status.platit {
-    background-color: #2ecc71;
+  .status-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #555;
+    font-weight: 600;
   }
-  
-  .status.scadenta-astazi {
-    background-color: #f1c40f;
+  .status-pill {
+    --pill-bg: #3498db;
+    --pill-fg: #ffffff;
+    --pill-shadow: rgba(0,0,0,0.12);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pill-fg);
+    background: linear-gradient(135deg,var(--pill-bg), shade(var(--pill-bg),12%));
+    box-shadow: 0 2px 4px var(--pill-shadow);
+    position: relative;
+    min-width: 6.5rem; /* keeps width consistent across variants */
+    text-align: center;
+    white-space: nowrap;
+    transition: background .3s ease, transform .2s ease;
   }
-  
-  .status.scadenta-depasita {
-    background-color: #e74c3c;
+  .status-pill:hover {
+    transform: translateY(-2px);
   }
-  
-  .status.in-termen {
-    background-color: #3498db;
+  /* Variant colors */
+  .status-pill.pill-platit { --pill-bg:#2ecc71; }
+  .status-pill.scadenta-astazi { --pill-bg:#f1c40f; --pill-fg:#000; }
+  .status-pill.scadenta-depasita { --pill-bg:#e74c3c; }
+  .status-pill.in-termen { --pill-bg:#3498db; }
+
+  /* Fallback for browsers without custom function shade() */
+  @supports not (background: linear-gradient(135deg,red, shade(red,10%))) {
+    .status-pill { background: var(--pill-bg); }
   }
   
   .tools {
@@ -158,6 +184,17 @@
     padding: 10px 15px;
     border-radius: 8px;
     margin-top: 10px;
+  }
+
+  /* Smooth expansion container to reduce perceived layout shift inside each invoice item */
+  /* Wrapper reserves vertical space gradually with animation to reduce sudden layout changes */
+  .payment-history-wrapper {
+    overflow: hidden;
+    transition: max-height .35s ease;
+    max-height: 0;
+  }
+  .payment-history-wrapper.open {
+    max-height: 600px; /* large enough to cover typical history; adjust if needed */
   }
   
   .payment-history ul {
@@ -190,5 +227,16 @@
   
   .delete-payment-btn:hover {
     background-color: #c0392b;
+  }
+
+  /* Supplier column stabilization: fixed width + ellipsis prevents horizontal shift when long supplier names load */
+  .supplier-cell { width: 16rem; }
+  .supplier-text-full {
+    display: inline-block;
+    max-width: 11.5rem; /* remaining width after label */
+    vertical-align: middle;
+    white-space: normal; /* allow wrapping */
+    overflow-wrap: anywhere; /* break long continuous strings */
+    line-height: 1.1;
   }
   

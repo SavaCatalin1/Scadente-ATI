@@ -11,7 +11,7 @@ function Homepage({ invoices, suppliers, loading }) {
   return (
     <div className="page-content">
       <div className="invoices-flex">
-        <h2 className="page-title">Facturile scadente ({invoices.length})</h2>
+  <h2 className="page-title">Facturile scadente (<span className="invoice-count">{invoices.length}</span>)</h2>
         <div className="width align-right">
           <b>De plata:</b> {totalSum.toFixed(2)} LEI
         </div>
