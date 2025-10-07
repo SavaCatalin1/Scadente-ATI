@@ -68,3 +68,47 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Bulk Mark as Paid Feature
+
+A custom enhancement was added to allow marking multiple filtered invoices as paid in one action.
+
+How it works:
+1. Navigate to the `Facturi` (Invoices) view.
+2. Use the existing filter controls (e.g., supplier, number, dates) to narrow down the list.
+3. A green button appears: `Marcheaza (X) ca platite` where X is the number of currently filtered & unpaid invoices.
+4. Click the button and confirm the action. All displayed unpaid invoices are updated in a single Firestore batch:
+	- `paid` is set to true
+	- `remainingSum` becomes 0
+	- A synthetic payment entry is appended to `paymentHistory` with the remaining amount (if any) so payment tracking integrity is preserved.
+
+UI Feedback:
+- While processing, the button shows a loading label.
+- A short success or error message is displayed near the total outstanding amount.
+
+Implementation notes:
+- Uses Firestore `writeBatch` for atomic multi-document updates.
+- Optimistic UI update is applied; the realtime `onSnapshot` listener will reconcile final state.
+
+If you need to revert a mistakenly bulk-marked invoice, open it individually and adjust payments manually (future enhancement could include a bulk undo).
+
+## Duplicate Invoice Cleanup Feature
+
+An additional maintenance tool lets you remove duplicate invoices based on exact invoice number matches.
+
+Rules:
+- Matching is case-insensitive and trims whitespace.
+- Only the earliest (oldest `issueDate`) invoice for each duplicated `invoiceNo` is kept; all later ones are deleted.
+- Empty or missing invoice numbers are ignored.
+
+How to use:
+1. Open the Invoices view.
+2. Click the orange button `Sterge Duplicatele`.
+3. A confirmation dialog shows how many duplicate documents will be removed.
+4. Confirm to proceed; deletions happen in Firestore batches (chunks <= 450 docs for safety).
+
+After completion:
+- A success or info message appears near the totals area.
+- Local cache (`invoicesCache`) is updated optimistically; realtime snapshot listener ensures consistency.
+
+Note: There is no automatic undo. Consider exporting data or doing a manual backup before large cleanup operations if data integrity is critical.

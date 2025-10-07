@@ -455,3 +455,58 @@
 .label{
   width: 8rem;
 }
+
+/* Bulk pay button */
+.bulk-pay-button {
+  background-color: #2ecc71;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background-color .25s ease, transform .15s ease;
+}
+
+.bulk-pay-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bulk-pay-button:not(:disabled):hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.bulk-pay-message {
+  margin-top: .3rem;
+  font-size: .85rem;
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+/* Dedupe button */
+.dedupe-button {
+  background-color: #e67e22;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background-color .25s ease, transform .15s ease;
+}
+.dedupe-button:hover:not(:disabled) { background-color: #d35400; transform: translateY(-2px); }
+.dedupe-button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+.dedupe-message {
+  margin-top: .3rem;
+  font-size: .8rem;
+  color: #e67e22;
+  font-weight: 600;
+}

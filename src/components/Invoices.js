@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Invoices.css";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc, writeBatch, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import InvoiceItem from "./InvoiceItem";
 import DatePicker from "react-datepicker";
@@ -16,6 +16,10 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
   const [paymentDateFilter, setPaymentDateFilter] = useState(null);
   const [sortOrder, setSortOrder] = useState({ field: "", order: "" });
   const [showFilters, setShowFilters] = useState(false);
+  const [bulkPayLoading, setBulkPayLoading] = useState(false);
+  const [bulkPayMessage, setBulkPayMessage] = useState("");
+  const [dedupeLoading, setDedupeLoading] = useState(false);
+  const [dedupeMessage, setDedupeMessage] = useState("");
 
   useEffect(() => {
     let filtered = invoices.filter((invoice) => {
@@ -90,6 +94,105 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
     setPaymentDateFilter(null);
   };
 
+  const unpaidFilteredInvoices = filteredInvoices.filter((inv) => !inv.paid);
+
+  const bulkMarkAsPaid = async () => {
+    if (unpaidFilteredInvoices.length === 0) return;
+    const confirmBulk = window.confirm(`Marcati ca platite ${unpaidFilteredInvoices.length} facturi filtrate?`);
+    if (!confirmBulk) return;
+    setBulkPayLoading(true);
+    setBulkPayMessage("");
+    try {
+      const batch = writeBatch(db);
+      unpaidFilteredInvoices.forEach((invoice) => {
+        const ref = doc(db, "invoices", invoice.id);
+        // Set remainingSum to 0 and add a paymentHistory entry for full payment if there is remainingSum > 0
+        const updates = { paid: true, remainingSum: 0 };
+        if (invoice.remainingSum > 0) {
+          updates.paymentHistory = [
+            ...(invoice.paymentHistory || []),
+            { amount: Number(invoice.remainingSum), date: Timestamp.fromDate(new Date()) },
+          ];
+        }
+        batch.update(ref, updates);
+      });
+      await batch.commit();
+      setBulkPayMessage(`Au fost marcate ca platite ${unpaidFilteredInvoices.length} facturi.`);
+      // Optimistic UI update (optional because onSnapshot will refresh) 
+      setInvoices((prev) => prev.map(inv => unpaidFilteredInvoices.find(f => f.id === inv.id) ? { ...inv, paid: true, remainingSum: 0 } : inv));
+      setTimeout(() => setBulkPayMessage(""), 4000);
+    } catch (e) {
+      console.error("Bulk pay error", e);
+      setBulkPayMessage("Eroare la marcarea bulk.");
+    } finally {
+      setBulkPayLoading(false);
+    }
+  };
+
+  const findDuplicateInvoices = () => {
+    // Map of normalized invoiceNo to list of invoices
+    const map = new Map();
+    invoices.forEach(inv => {
+      const key = (inv.invoiceNo || "").trim().toLowerCase();
+      if (!key) return; // skip empty numbers
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(inv);
+    });
+    // Return arrays with length > 1
+    return Array.from(map.values()).filter(group => group.length > 1);
+  };
+
+  const deleteDuplicateInvoices = async () => {
+    setDedupeMessage("");
+    const duplicates = findDuplicateInvoices();
+    if (duplicates.length === 0) {
+      setDedupeMessage("Nu exista facturi duplicate.");
+      setTimeout(() => setDedupeMessage(""), 4000);
+      return;
+    }
+
+    // Determine which invoices to keep: keep earliest issueDate (or first entered if issueDate missing)
+    // Collect invoices to delete
+    const toDelete = [];
+    duplicates.forEach(group => {
+      const sorted = group.slice().sort((a,b) => new Date(a.issueDate) - new Date(b.issueDate));
+      // Keep first, delete rest
+      sorted.slice(1).forEach(inv => toDelete.push(inv));
+    });
+
+    const confirmMsg = `S-au gasit ${toDelete.length} facturi duplicate. Doriti sa le stergeti? (Se pastreaza cea mai veche la fiecare numar)`;
+    const confirmDel = window.confirm(confirmMsg);
+    if (!confirmDel) return;
+    setDedupeLoading(true);
+    try {
+      // Firestore batched deletes (batch limit 500)
+      const chunks = [];
+      for (let i = 0; i < toDelete.length; i += 450) { // use 450 for safety
+        chunks.push(toDelete.slice(i, i + 450));
+      }
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(inv => {
+          batch.delete(doc(db, "invoices", inv.id));
+        });
+        await batch.commit();
+      }
+      setDedupeMessage(`Au fost sterse ${toDelete.length} facturi duplicate.`);
+      // Optimistic state update
+      setInvoices(prev => prev.filter(inv => !toDelete.find(d => d.id === inv.id)));
+      // Update localStorage cache too
+      const cached = JSON.parse(localStorage.getItem("invoicesCache") || "[]");
+      const updatedCache = cached.filter(inv => !toDelete.find(d => d.id === inv.id));
+      localStorage.setItem("invoicesCache", JSON.stringify(updatedCache));
+      setTimeout(() => setDedupeMessage(""), 5000);
+    } catch (e) {
+      console.error("Eroare la stergerea duplicatelor", e);
+      setDedupeMessage("Eroare la stergerea duplicatelor.");
+    } finally {
+      setDedupeLoading(false);
+    }
+  };
+
   const toggleSort = (field) => {
     setSortOrder((prevState) => {
       if (prevState.field === field) {
@@ -110,6 +213,24 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
         <div className="filters-dropdown">
           <button onClick={() => setShowFilters(!showFilters)} className="filters-button">
             <FilterListIcon /> {showFilters ? "Ascunde filtre" : "Arata filtre"}
+          </button>
+        </div>
+
+        <div className="bulk-actions width align-right">
+          <button
+            className="bulk-pay-button"
+            disabled={bulkPayLoading || unpaidFilteredInvoices.length === 0}
+            onClick={bulkMarkAsPaid}
+          >
+            {bulkPayLoading ? "Se proceseaza..." : `Marcheaza (${unpaidFilteredInvoices.length}) ca platite`}
+          </button>
+          <button
+            className="dedupe-button"
+            disabled={dedupeLoading}
+            onClick={deleteDuplicateInvoices}
+            title="Sterge facturile duplicate dupa numarul facturii (pastreaza cea mai veche)"
+          >
+            {dedupeLoading ? "Verific..." : "Sterge Duplicatele"}
           </button>
         </div>
 
@@ -165,6 +286,12 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
 
         <div className="width align-right">
           <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
+          {bulkPayMessage && (
+            <div className="bulk-pay-message">{bulkPayMessage}</div>
+          )}
+          {dedupeMessage && (
+            <div className="dedupe-message">{dedupeMessage}</div>
+          )}
         </div>
       </div>
 
