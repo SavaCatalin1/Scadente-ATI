@@ -7,6 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import Button from './ui/Button';
 
 function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
   const [filteredInvoices, setFilteredInvoices] = useState(invoices);
@@ -223,114 +224,143 @@ function Invoices({ projects, invoices, suppliers, setInvoices, loading }) {
   };
 
   return (
-    <div className="page-content">
-      <div className="invoices-flex">
-        <div className="page-title2 width">
-          Toate facturile ({filteredInvoices.length})
-        </div>
-
-        <div className="filters-dropdown" ref={filtersButtonRef}>
-          <button onClick={() => setShowFilters(!showFilters)} className="filters-button">
-            <FilterListIcon /> {showFilters ? "Ascunde filtre" : "Arata filtre"}
-          </button>
-          {showFilters && (
-            <div className="filters-section" ref={filtersRef}>
-              <div className="supplier-flex width">
-                <label className="label">Furnizor:</label>
-                <input
-                  className="supplier-input"
-                  value={supplierFilter}
-                  onChange={(e) => setSupplierFilter(e.target.value)}
-                />
-              </div>
-              <div className="supplier-flex width">
-                <label className="label">Nr. Factura:</label>
-                <input
-                  className="supplier-input"
-                  value={invoiceNoFilter}
-                  onChange={(e) => setInvoiceNoFilter(e.target.value)}
-                />
-              </div>
-              <div className="supplier-flex width">
-                <label className="label">Data emitere:</label>
-                <DatePicker
-                  selected={issueDateFilter}
-                  onChange={(date) => setIssueDateFilter(date)}
-                  className="date-picker"
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="Selecteaza data emitere"
-                />
-              </div>
-              <div className="supplier-flex width">
-                <label className="label">Data scadenta:</label>
-                <DatePicker
-                  selected={paymentDateFilter}
-                  onChange={(date) => setPaymentDateFilter(date)}
-                  className="date-picker"
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="Selecteaza data scadenta"
-                />
-              </div>
-              <button onClick={() => toggleSort("issueDate")} className="sort-button">
-                Sorteaza dupa Data Emitere ({sortOrder.field === "issueDate" ? sortOrder.order : "none"})
-              </button>
-              <button onClick={() => toggleSort("paymentDate")} className="sort-button">
-                Sorteaza dupa Data Scadenta ({sortOrder.field === "paymentDate" ? sortOrder.order : "none"})
-              </button>
-              <button onClick={clearFilters} className="clear-filters-button">
-                <ClearAllIcon /> Curata filtrele
-              </button>
+    <div className="page-content invoices-page">
+      <div className="card invoices-header-card">
+        <div className="header-top">
+          <h1 className="ds-page-title">Facturi</h1>
+         
+          <div className="invoices-actions">
+            <div className="filters-dropdown" ref={filtersButtonRef}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="filters-button"
+              >
+                <FilterListIcon style={{fontSize:'16px'}} /> {showFilters ? "Filtre" : "Filtre"}
+              </Button>
+              {showFilters && (
+                <div className="filters-section modern-filters-card" ref={filtersRef}>
+                  <div className="filters-grid">
+                    <div className="filter-field">
+                      <label className="label">Furnizor</label>
+                      <input
+                        className="input"
+                        value={supplierFilter}
+                        onChange={(e) => setSupplierFilter(e.target.value)}
+                        placeholder="Cauta furnizor"
+                      />
+                    </div>
+                    <div className="filter-field">
+                      <label className="label">Nr. Factura</label>
+                      <input
+                        className="input"
+                        value={invoiceNoFilter}
+                        onChange={(e) => setInvoiceNoFilter(e.target.value)}
+                        placeholder="Ex: 123..."
+                      />
+                    </div>
+                    <div className="filter-field">
+                      <label className="label">Data emitere</label>
+                      <DatePicker
+                        selected={issueDateFilter}
+                        onChange={(date) => setIssueDateFilter(date)}
+                        className="input date-picker"
+                        dateFormat="dd-MM-yyyy"
+                        placeholderText="Selecteaza"
+                      />
+                    </div>
+                    <div className="filter-field">
+                      <label className="label">Data scadenta</label>
+                      <DatePicker
+                        selected={paymentDateFilter}
+                        onChange={(date) => setPaymentDateFilter(date)}
+                        className="input date-picker"
+                        dateFormat="dd-MM-yyyy"
+                        placeholderText="Selecteaza"
+                      />
+                    </div>
+                  </div>
+                  <div className="filter-actions">
+                    <Button size="sm" variant="outline" onClick={() => toggleSort('issueDate')}>
+                      Sort Emis ({sortOrder.field === 'issueDate' ? sortOrder.order : '—'})
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => toggleSort('paymentDate')}>
+                      Sort Scadenta ({sortOrder.field === 'paymentDate' ? sortOrder.order : '—'})
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={clearFilters}>
+                      <ClearAllIcon style={{fontSize:'14px'}} /> Curata
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+            <div className="bulk-actions-group">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={bulkPayLoading || unpaidFilteredInvoices.length === 0}
+                onClick={bulkMarkAsPaid}
+              >
+                {bulkPayLoading ? "Se proceseaza..." : `Marcheaza (${unpaidFilteredInvoices.length})`}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={dedupeLoading}
+                onClick={deleteDuplicateInvoices}
+                title="Sterge facturile duplicate dupa numarul facturii (pastreaza cea mai veche)"
+              >
+                {dedupeLoading ? "Verific..." : "Sterge Duplicatele"}
+              </Button>
+            </div>
+            {/* <div className="totals-chip">
+              <span className="chip-label">De plata</span>
+              <span className="chip-value">{totalUnpaidSum.toFixed(2)} LEI</span>
+            </div> */}
+             <div className="invoices-stats-chips">
+            <div className="stat-chip invoices-count">
+              <span className="stat-icon" aria-hidden>📄</span>
+              <div className="stat-meta">
+                <span className="s-label">Total</span>
+                <span className="s-value">{filteredInvoices.length}</span>
+              </div>
+            </div>
+            <div className="stat-chip unpaid-sum">
+              <span className="stat-icon" aria-hidden>💰</span>
+              <div className="stat-meta">
+                <span className="s-label">Neplatit</span>
+                <span className="s-value">{totalUnpaidSum.toFixed(2)} LEI</span>
+              </div>
+            </div>
+          </div>
+          </div>
         </div>
-
-        <div className="bulk-actions width align-right">
-          <button
-            className="bulk-pay-button"
-            disabled={bulkPayLoading || unpaidFilteredInvoices.length === 0}
-            onClick={bulkMarkAsPaid}
-          >
-            {bulkPayLoading ? "Se proceseaza..." : `Marcheaza (${unpaidFilteredInvoices.length}) ca platite`}
-          </button>
-          <button
-            className="dedupe-button"
-            disabled={dedupeLoading}
-            onClick={deleteDuplicateInvoices}
-            title="Sterge facturile duplicate dupa numarul facturii (pastreaza cea mai veche)"
-          >
-            {dedupeLoading ? "Verific..." : "Sterge Duplicatele"}
-          </button>
-        </div>
-
-
-        <div className="width align-right totals-area">
-          <b>De plata:</b> {totalUnpaidSum.toFixed(2)} LEI
+        <div className="messages-bar">
           <div className="status-messages">
-            {bulkPayMessage && (
-              <div className="bulk-pay-message">{bulkPayMessage}</div>
-            )}
-            {!bulkPayMessage && dedupeMessage && (
-              <div className="dedupe-message">{dedupeMessage}</div>
-            )}
+            {bulkPayMessage && <div className="bulk-pay-message">{bulkPayMessage}</div>}
+            {!bulkPayMessage && dedupeMessage && <div className="dedupe-message">{dedupeMessage}</div>}
           </div>
         </div>
       </div>
 
-      {loading ? (
-        <p>Loading suppliers...</p>
-      ) : (
-        <ul className="invoice-list">
-          {filteredInvoices.map((invoice) => (
-            <InvoiceItem
-              key={invoice.id}
-              invoice={invoice}
-              supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
-              projects={projects}
-              deleteInvoice={deleteInvoice}
-            />
-          ))}
-        </ul>
-      )}
+      <div className="card invoice-list-card">
+        {loading ? (
+          <p>Loading suppliers...</p>
+        ) : (
+          <ul className="invoice-list modern">
+            {filteredInvoices.map((invoice) => (
+              <InvoiceItem
+                key={invoice.id}
+                invoice={invoice}
+                supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
+                projects={projects}
+                deleteInvoice={deleteInvoice}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

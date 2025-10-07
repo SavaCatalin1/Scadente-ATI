@@ -5,6 +5,13 @@ import moment from "moment";
 import "../styles/Projects.css";
 import AddProjectModal from "./AddProject";
 import InvoiceItem from "./InvoiceItem";
+import Card from './ui/Card';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
+import EditIcon from '@mui/icons-material/Edit';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import FolderIcon from '@mui/icons-material/Folder';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 
 function Projects({ projects, setProjects, suppliers, loading, invoices }) {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -80,132 +87,105 @@ function Projects({ projects, setProjects, suppliers, loading, invoices }) {
   };
 
   return (
-    <div className="page-content">
-      <div className="projects-header-flex">
-        <h2 className="page-title">Proiecte</h2>
-        <button className="add-project-button" onClick={openModal}>
-          Adauga Proiect
-        </button>
+    <div className="projects-page-wrapper">
+      <div className="projects-topbar">
+        <h1 className="projects-title">Proiecte</h1>
+        <Button variant="primary" onClick={openModal}>Adauga Proiect</Button>
       </div>
 
-      {selectedProject && !showProjects && (
-        <div className="selected">
-          <div className="da">
-            <div className="project-item-icon">📁</div>
-            {isEditingProjectName ? (
-              <input
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                className="edit-project-input"
-              />
-            ) : (
-              getSelectedProjectName()
-            )}
-          </div>
-          {!isEditingProjectName ? (
-            <button className="edit-button" onClick={startEditingProjectName}>
-              Edit
-            </button>
-          ) : (
-            <div>
-              <button onClick={saveProjectName} className="edit-button ml">
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditingProjectName(false)}
-                className="edit-button ml"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!showProjects && (
-        <button className="toggle-projects-button" onClick={toggleProjects}>
-          Arata Proiectele
-        </button>
-      )}
-
       {showProjects && (
-        <div className="projects-list">
-          <ul>
-            {sortedProjects.map(([projectId, projectName]) => (
-              <li
+        <div className="projects-grid">
+          {sortedProjects.length === 0 && (
+            <Card className="project-empty-card">
+              <Badge variant="info">Niciun proiect</Badge>
+              <p>Adauga primul proiect pentru a incepe sa urmaresti facturile.</p>
+            </Card>
+          )}
+          {sortedProjects.map(([projectId, projectName]) => {
+            const projectInvoiceCount = invoices.filter(inv => inv.project === projectId).length;
+            const unpaidAmount = invoices.filter(inv => inv.project === projectId && !inv.paid).reduce((acc,i)=>acc+Number(i.remainingSum||0),0);
+            return (
+              <Card
                 key={projectId}
-                className={`${projectId === selectedProject ? "selected" : "project-item"
-                  }`}
+                className={`project-card ${projectId === selectedProject ? 'active' : ''}`}
                 onClick={() => fetchInvoicesForProject(projectId)}
               >
-                <div>
-                  <span className="project-item-icon">📁</span>
-                  {projectName}
+                <div className="proj-head">
+                  <div className="proj-icon"><FolderIcon fontSize="small" /></div>
+                  <div className="proj-name" title={projectName}>{projectName}</div>
                 </div>
-              </li>
-            ))}
-          </ul>
+                <div className="proj-metrics">
+                  <div className="metric-mini">
+                    <span className="mlabel">Facturi</span>
+                    <span className="mvalue">{projectInvoiceCount}</span>
+                  </div>
+                  <div className="metric-mini">
+                    <span className="mlabel">Neplatite</span>
+                    <span className="mvalue warn">{unpaidAmount.toFixed(2)} LEI</span>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      <div className="invoices-section">
-        {selectedProject && !showProjects && (
-          <>
-            <h3 className="invoices-header">
-              Facturi pentru proiectul selectat
-            </h3>
-
-            <div className="total-sums">
-              <div>
-                <b className="text">Total facturi:</b>{" "}
-                <span className="text">{total.toFixed(2)} LEI</span>
-              </div>
-              <div>
-                <b className="text">Total facturi neplatite:</b>{" "}
-                <span className="text">{unpaidTotal.toFixed(2)} LEI</span>
-              </div>
+      {!showProjects && selectedProject && (
+        <div className="project-detail-view">
+          <div className="detail-header">
+            <Button variant="neutral" size="xs" onClick={toggleProjects} className="back-btn-compact"><ArrowBackIcon fontSize="inherit" /> Inapoi</Button>
+            <div className="detail-title-group">
+              {isEditingProjectName ? (
+                <input
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="project-name-input input"
+                  autoFocus
+                />
+              ) : (
+                <h2 className="detail-title">{getSelectedProjectName()}</h2>
+              )}
+              {!isEditingProjectName && (
+                <Button variant="outline" size="sm" onClick={startEditingProjectName}><EditIcon fontSize="inherit" /> Edit</Button>
+              )}
+              {isEditingProjectName && (
+                <div className="edit-actions">
+                  <Button variant="success" size="sm" onClick={saveProjectName}>Salveaza</Button>
+                  <Button variant="danger" size="sm" onClick={() => setIsEditingProjectName(false)}>Anuleaza</Button>
+                </div>
+              )}
             </div>
-
-            {projectInvoices.length > 0 ? (
-              <ul className="invoice-list">
+            <div className="detail-stats-bar">
+              <div className="ds-chip"><span className="ds-label">Total</span><span className="ds-value">{total.toFixed(2)} LEI</span></div>
+              <div className="ds-chip warn"><span className="ds-label">Neplatite</span><span className="ds-value">{unpaidTotal.toFixed(2)} LEI</span></div>
+              <div className="ds-chip"><span className="ds-label">Facturi</span><span className="ds-value">{projectInvoices.length}</span></div>
+            </div>
+          </div>
+          <Card className="project-invoices-card">
+            {projectInvoices.length === 0 ? (
+              <div className="empty-project-invoices">Nu exista facturi pentru acest proiect.</div>
+            ) : (
+              <ul className="invoice-list modern">
                 {loading ? (
                   <p>Loading suppliers...</p>
                 ) : (
-                  projectInvoices.map((invoice) => {
-                    const issueDateFormatted = invoice.issueDate?.toDate
-                      ? moment(invoice.issueDate.toDate()).format("DD-MM-YYYY")
-                      : moment(invoice.issueDate).format("DD-MM-YYYY");
-
-                    const paymentDateFormatted = invoice.paymentDate?.toDate
-                      ? moment(invoice.paymentDate.toDate()).format("DD-MM-YYYY")
-                      : moment(invoice.paymentDate).format("DD-MM-YYYY");
-
-                    return (
-                      <InvoiceItem
-                        key={invoice.id}
-                        invoice={invoice}
-                        projects={projects}
-                        supplierName={
-                          suppliers[invoice.supplier] || "Unknown Supplier"
-                        }
-                        selectedProject={selectedProject}
-                      />
-                    );
-                  })
+                  projectInvoices.map((invoice) => (
+                    <InvoiceItem
+                      key={invoice.id}
+                      invoice={invoice}
+                      projects={projects}
+                      supplierName={suppliers[invoice.supplier] || 'Unknown Supplier'}
+                      selectedProject={selectedProject}
+                    />
+                  ))
                 )}
               </ul>
-            ) : (
-              <p>Nu exista facturi pentru acest proiect.</p>
             )}
-          </>
-        )}
-      </div>
+          </Card>
+        </div>
+      )}
 
-      <AddProjectModal
-        isOpen={isModalOpen}
-        closeModal={closeModal}
-        setProjects={setProjects}
-      />
+      <AddProjectModal isOpen={isModalOpen} closeModal={closeModal} setProjects={setProjects} />
     </div>
   );
 }

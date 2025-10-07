@@ -1,94 +1,110 @@
 import React, { useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import moment from "moment";
 import "../styles/Prediction.css";
 import InvoiceItem from "./InvoiceItem";
+import Card from "./ui/Card";
+import Button from "./ui/Button";
 
-function Prediction({ projects, invoices, suppliers, loading }) {
+function Prediction({ projects = {}, invoices = [], suppliers = {}, loading }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [predictedInvoices, setPredictedInvoices] = useState([]);
   const [totalSum, setTotalSum] = useState(0);
 
-  // Fetch invoices up to the selected date and link with project names
   const fetchPredictedInvoices = () => {
     if (!selectedDate) return;
 
-    const selectedDateEndOfDay = moment(selectedDate).endOf("day").toDate();
+    const endOfDay = moment(selectedDate).endOf("day").toDate();
 
-    const filteredInvoices = invoices.filter((invoice) => {
+    const filtered = invoices.filter((inv) => {
       const paymentDate =
-        invoice.paymentDate instanceof Date
-          ? invoice.paymentDate
-          : new Date(invoice.paymentDate);
+        inv.paymentDate instanceof Date ? inv.paymentDate : new Date(inv.paymentDate);
       return (
-        (moment(paymentDate).isBefore(moment(selectedDateEndOfDay), "day") ||
-          moment(paymentDate).isSame(moment(selectedDateEndOfDay), "day")) &&
-        !invoice.paid
+        (moment(paymentDate).isBefore(endOfDay, "minute") ||
+          moment(paymentDate).isSame(endOfDay, "day")) && !inv.paid
       );
     });
 
-    // For each invoice, add the corresponding projectName from the projects map.
     const projectArray = Object.entries(projects);
-    const invoicesData = filteredInvoices.map((invoice) => {
-      const projectName =
-        projectArray.find(([id]) => id === invoice.project)?.[1] || "N/A";
-      return { ...invoice, projectName };
+    const withProjectNames = filtered.map((inv) => {
+      const projectName = projectArray.find(([id]) => id === inv.project)?.[1] || "N/A";
+      return { ...inv, projectName };
     });
 
-    // Sum up the totalSum of the filtered invoices.
-    const sum = invoicesData.reduce(
-      (acc, curr) => acc + Number(curr.totalSum),
-      0
-    );
-
-    setPredictedInvoices(invoicesData);
+    const sum = withProjectNames.reduce((acc, curr) => acc + Number(curr.totalSum || 0), 0);
+    setPredictedInvoices(withProjectNames);
     setTotalSum(sum);
   };
 
-  return (
-    <div className="page-content">
-      <h2 className="page-title">Cheltuieli previzionate</h2>
+  const unpaidCount = predictedInvoices.filter((i) => !i.paid).length; // should equal length, but future‑proof
 
-      <div className="date-picker-container">
-        <label>Selectati o data: </label>
-        <DatePicker
-          selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)}
-          dateFormat="dd-MM-yyyy"
-          className="date-picker"
-        />
-        <button className="fetch-button" onClick={fetchPredictedInvoices}>
-          Prezice
-        </button>
+  return (
+    <div className="page-content prediction-modern">
+      <div className="prediction-header card">
+        <div className="ph-head-top">
+          <h1 className="ds-page-title">Cheltuieli previzionate</h1>
+          <div className="pred-stats">
+            <div className="pred-chip">
+              <span className="chip-label">Facturi</span>
+              <span className="chip-value">{predictedInvoices.length}</span>
+            </div>
+            <div className="pred-chip warn">
+              <span className="chip-label">Neplatite</span>
+              <span className="chip-value">{unpaidCount}</span>
+            </div>
+            <div className="pred-chip amount">
+              <span className="chip-label">Total</span>
+              <span className="chip-value">{totalSum.toFixed(2)} LEI</span>
+            </div>
+          </div>
+        </div>
+        <div className="pred-controls">
+          <div className="control-group">
+            <label className="control-label">Data referinta</label>
+            <DatePicker
+              selected={selectedDate}
+              onChange={(date) => setSelectedDate(date)}
+              dateFormat="dd-MM-yyyy"
+              className="input date-picker"
+              placeholderText="Alege data"
+            />
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={fetchPredictedInvoices}
+            disabled={!selectedDate}
+          >
+            Calculeaza
+          </Button>
+        </div>
+        {predictedInvoices.length > 0 && (
+          <div className="pred-summary-date">
+            Total pentru <b>{moment(selectedDate).format("DD-MM-YYYY")}</b>
+          </div>
+        )}
       </div>
 
-      {predictedInvoices.length > 0 ? (
-        <>
-          <div>
-            Total de plata la data de:{" "}
-            <b>{moment(selectedDate).format("DD-MM-YYYY")}</b>:{" "}
-            <i>{totalSum.toFixed(2)} LEI</i>
-          </div>
-          <ul className="invoice-list">
+      <Card className="prediction-list-card">
+        {predictedInvoices.length === 0 ? (
+          <p className="empty-note">Nu sunt facturi scadente la data selectata.</p>
+        ) : (
+          <ul className="invoice-list modern">
             {loading ? (
               <p>Loading suppliers...</p>
             ) : (
-              predictedInvoices.map((invoice) => (
+              predictedInvoices.map((inv) => (
                 <InvoiceItem
-                  key={invoice.id}
-                  invoice={invoice}
-                  supplierName={suppliers[invoice.supplier] || "Unknown Supplier"}
+                  key={inv.id}
+                  invoice={inv}
+                  supplierName={suppliers[inv.supplier] || "Unknown Supplier"}
                 />
               ))
             )}
           </ul>
-        </>
-      ) : (
-        <p>Nu sunt facturi scadente la data selectata.</p>
-      )}
+        )}
+      </Card>
     </div>
   );
 }

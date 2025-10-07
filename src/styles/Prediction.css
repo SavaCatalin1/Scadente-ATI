@@ -1,55 +1,45 @@
-/* src/styles/Prediction.css */
-.prediction-page {
-  padding: 20px;
+/* Modern Prediction page styling */
+.prediction-modern { display:flex; flex-direction:column; gap:1.4rem; }
+
+.prediction-header.card { padding:1.25rem 1.35rem 1.35rem; display:flex; flex-direction:column; gap:1.1rem; }
+.prediction-header .ph-head-top { display:flex; flex-wrap:wrap; gap:1rem 2rem; justify-content:space-between; align-items:flex-start; }
+
+.pred-stats { display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; }
+.pred-chip { --c: var(--color-accent); background:linear-gradient(135deg,var(--color-accent) -10%,var(--color-accent-soft)); color:#fff; padding:.55rem .85rem .6rem; border-radius:999px; display:flex; flex-direction:column; min-width:96px; position:relative; overflow:hidden; }
+.pred-chip:before { content:""; position:absolute; inset:0; background:linear-gradient(120deg,rgba(255,255,255,.18),rgba(255,255,255,0) 55%); mix-blend-mode:overlay; pointer-events:none; }
+.pred-chip .chip-label { font-size:.58rem; text-transform:uppercase; letter-spacing:.08em; opacity:.85; font-weight:600; }
+.pred-chip .chip-value { font-size:.9rem; font-weight:600; line-height:1.1; margin-top:.15rem; }
+.pred-chip.warn { --c:#ff7a00; background:linear-gradient(135deg,#ff7a00,#ffae00); }
+.pred-chip.amount { --c:#6a4bff; background:linear-gradient(135deg,#6a4bff,#8f6bff); }
+
+html[data-theme='dark'] .pred-chip { color:#fff; }
+
+.pred-controls { 
+  display:grid; 
+  grid-template-columns: 1fr auto; 
+  align-items:end; 
+  gap:1rem; 
+  width:100%; 
+}
+.pred-controls .control-group { min-width:220px; }
+.control-group { display:flex; flex-direction:column; gap:.35rem; }
+.pred-controls .react-datepicker-wrapper { width:20%; }
+.pred-controls .react-datepicker__input-container input { width:100%; }
+.pred-controls button, .pred-controls .btn { white-space:nowrap; }
+.control-label { font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; opacity:.8; }
+
+.pred-summary-date { font-size:.7rem; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:var(--color-text-soft); margin-top:.25rem; }
+
+.prediction-list-card { padding:1rem 1.1rem 1.2rem; }
+.prediction-list-card .empty-note { margin:0; font-size:.85rem; opacity:.75; }
+
+/* Responsive tweaks */
+@media (max-width:720px){
+  .pred-controls { grid-template-columns:1fr; }
+  .pred-controls button, .pred-controls .btn { width:100%; justify-content:center; }
 }
 
-.page-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-.date-picker-container {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center; /* Align items vertically in the center */
-  justify-content: space-around;
-  width: 25rem;
-}
-
-.date-picker-container .date-picker {
-  flex-grow: 1; /* Allow the date picker to take up available space */
-}
-
-.fetch-button {
-  margin-left: 10px;
-  padding: 8px 16px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.fetch-button:hover {
-  background-color: #2980b9;
-}
-
-.total-sum {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-.invoice-list {
-  list-style-type: none;
-  padding: 0;
-}
-
-.invoice-item {
-  padding: 15px;
-  background-color: #f4f7fc;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+/* Legacy styles kept for reference (can be removed post‑migration)
+ .prediction-page, .page-title, .date-picker-container, .fetch-button, .total-sum { }
+*/
 

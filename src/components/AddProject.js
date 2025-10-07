@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import "../styles/AddProjectModal.css";
+import "../styles/AddProjectModal.css"; // retain for now (will override with new classes)
+import Button from './ui/Button';
 
 function AddProjectModal({ isOpen, closeModal, setProjects }) {
   const [projectName, setProjectName] = useState("");
@@ -39,29 +40,33 @@ function AddProjectModal({ isOpen, closeModal, setProjects }) {
     }
   }, [isOpen]);
 
-  if (!isOpen) return null; // Don't render if the modal is closed
+  if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="modal-title">Adauga Proiect Nou</h2>
-        <form onSubmit={handleSubmit} className="modal-form">
-          <label className="modal-label">Numele Proiectului</label>
-          <input
-            type="text"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            required
-            className="modal-input"
-            placeholder="Introduceți numele proiectului"
-          />
-          <button type="submit" className="modal-submit">
-            Adauga Proiect
-          </button>
-        </form>
-        <button className="modal-close" onClick={closeModal}>
-          X
-        </button>
+    <div className="app-modal-overlay" onClick={closeModal}>
+      <div className="app-modal" role="dialog" aria-modal="true" aria-label="Adauga Proiect" onClick={e => e.stopPropagation()}>
+        <div className="app-modal-header">
+          <h2 className="app-modal-title">Adauga Proiect Nou</h2>
+          <button className="app-modal-close" type="button" onClick={closeModal} aria-label="Inchide">✕</button>
+        </div>
+        <div className="app-modal-body">
+          <form onSubmit={handleSubmit} className="app-modal-form add-project-form">
+            <label className="input-label">Numele Proiectului</label>
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              required
+              className="input"
+              placeholder="Introduceți numele proiectului"
+              maxLength={80}
+            />
+            <div className="form-actions">
+              <Button type="submit" variant="primary" size="sm" disabled={!projectName.trim()}>Adauga</Button>
+              <Button type="button" variant="neutral" size="sm" onClick={closeModal}>Anuleaza</Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

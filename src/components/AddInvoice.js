@@ -3,8 +3,9 @@ import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import "../styles/AddInvoice.css";
+import "../styles/AddInvoice.css"; // will contain updated unified styles
 import Supplier from "./Supplier";
+import Button from './ui/Button';
 
 function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -71,69 +72,80 @@ function AddInvoice({ isOpen, closeModal, setInvoices, projects, invoices }) {
   }));
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="modal-title">Adauga factura noua</h2>
-
-        {successMessage && <div className="success-message">{successMessage}</div>}
-
-        <form onSubmit={handleSubmit} className="modal-form">
-          <Supplier setSelectedSupplier={setSelectedSupplier} />
-
-          <label className="modal-label">Nr. factura</label>
-          <input
-            value={invoiceNo}
-            onChange={(e) => setInvoiceNo(e.target.value)}
-            required
-            className="modal-input"
-          />
-
-          <label className="modal-label">Total</label>
-          <input
-            type="number"
-            value={totalSum}
-            onChange={(e) => setTotalSum(e.target.value)}
-            required
-            className="modal-input"
-          />
-
-          <label className="modal-label">Data emitere</label>
-          <DatePicker
-            selected={issueDate}
-            onChange={setIssueDate}
-            className="modal-datepicker"
-          />
-
-          <label className="modal-label">Data scadenta</label>
-          <DatePicker
-            selected={paymentDate}
-            onChange={setPaymentDate}
-            className="modal-datepicker"
-          />
-
-          <label className="modal-label">Proiect</label>
-          <select
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            className="modal-input"
-          >
-            <option value="" disabled hidden>
-              Selecteaza un proiect
-            </option>
-            {projectOptions.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-
-          <button type="submit" className="modal-submit" disabled={loading}>
-            {loading ? "Adaugare..." : "Adauga factura"}
-          </button>
-        </form>
-        <button className="modal-close" onClick={closeModal}>
-          Inchide
-        </button>
+    <div className="app-modal-overlay" onClick={closeModal}>
+      <div className="app-modal wide" role="dialog" aria-modal="true" aria-label="Adauga factura" onClick={e => e.stopPropagation()}>
+        <div className="app-modal-header">
+          <h2 className="app-modal-title">Adauga factura noua</h2>
+          <button className="app-modal-close" type="button" onClick={closeModal} aria-label="Inchide">✕</button>
+        </div>
+        <div className="app-modal-body">
+          {successMessage && <div className="modal-success-banner">{successMessage}</div>}
+          <form onSubmit={handleSubmit} className="app-modal-form add-invoice-form">
+            <div className="form-grid">
+              <div className="form-span-2">
+                <Supplier setSelectedSupplier={setSelectedSupplier} />
+              </div>
+              <div className="form-field">
+                <label className="input-label">Nr. factura</label>
+                <input
+                  value={invoiceNo}
+                  onChange={(e) => setInvoiceNo(e.target.value)}
+                  required
+                  className="input"
+                  placeholder="Ex: INV-123"
+                  maxLength={60}
+                />
+              </div>
+              <div className="form-field">
+                <label className="input-label">Total</label>
+                <input
+                  type="number"
+                  value={totalSum}
+                  onChange={(e) => setTotalSum(e.target.value)}
+                  required
+                  className="input"
+                  min={0}
+                  step="0.01"
+                />
+              </div>
+              <div className="form-field">
+                <label className="input-label">Data emitere</label>
+                <DatePicker
+                  selected={issueDate}
+                  onChange={setIssueDate}
+                  className="input date-picker"
+                  dateFormat="dd-MM-yyyy"
+                />
+              </div>
+              <div className="form-field">
+                <label className="input-label">Data scadenta</label>
+                <DatePicker
+                  selected={paymentDate}
+                  onChange={setPaymentDate}
+                  className="input date-picker"
+                  dateFormat="dd-MM-yyyy"
+                />
+              </div>
+              <div className="form-field">
+                <label className="input-label">Proiect</label>
+                <select
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  className="input"
+                >
+                  <option value="" disabled hidden>Selecteaza un proiect</option>
+                  {projectOptions.map((project) => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="form-actions">
+              <Button type="submit" variant="primary" size="sm" disabled={loading || !invoiceNo || !selectedSupplier}>{loading ? 'Adaugare...' : 'Adauga factura'}</Button>
+              <Button type="button" variant="neutral" size="sm" onClick={closeModal}>Anuleaza</Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

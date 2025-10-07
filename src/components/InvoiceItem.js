@@ -6,10 +6,12 @@ import "react-datepicker/dist/react-datepicker.css";
 import { db } from "../firebase";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-// import HistoryIcon from "@mui/icons-material/History";
 import Modal from "react-modal";
 import Supplier from "./Supplier";
-import '../styles/InvoiceItem.css'
+import '../styles/InvoiceItem.css';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
 
 const InvoiceItem = ({
   invoice,
@@ -205,220 +207,140 @@ console.log(projects)
   return (
     <li className="invoice-item" key={invoice.id}>
       {isEditing ? (
-        <>
-          {/* Edit Mode */}
-          <div className="invitm-div">
-            <div className="item-size">
-            <Supplier setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier} style={true}/>
+        <Card className="invoice-card editing">
+          <div className="edit-header-row">
+            <h4 className="edit-title">Editeaza factura</h4>
+            <span className="edit-hint">Actualizeaza campurile si salveaza</span>
+          </div>
+          <div className="invoice-grid-edit">
+            <div className="field">
+              <Supplier hideLabel setSelectedSupplier={setSupplier} selectedSupplier={invoiceData.supplier} style={true} />
             </div>
-
-            <label className="item-size">
-              <b>Numar factura:</b>
-              <input
-                value={invoiceData.invoiceNo}
-                onChange={(e) =>
-                  setInvoiceData({ ...invoiceData, invoiceNo: e.target.value })
-                }
-              />
-            </label>
-
-            <label className="item-size">
-              <b>Total:</b>
-              <input
-                type="number"
-                value={invoiceData.totalSum}
-                onChange={(e) =>
-                  setInvoiceData({ ...invoiceData, totalSum: e.target.value })
-                }
-              />
-            </label>
-
-            <label className="item-size">
-              <b>Proiect:</b>
-              <select
-                value={invoiceData.project}
-                onChange={(e) =>
-                  setInvoiceData({ ...invoiceData, project: e.target.value })
-                }
-              >
-                <option value="" disabled>
-                  Selecteaza un proiect
-                </option>
+            <div className="field">
+              <label className="field-label">Numar factura</label>
+              <input className="input" value={invoiceData.invoiceNo} onChange={(e) => setInvoiceData({ ...invoiceData, invoiceNo: e.target.value })} />
+            </div>
+            <div className="field">
+              <label className="field-label">Total</label>
+              <input className="input" type="number" value={invoiceData.totalSum} onChange={(e) => setInvoiceData({ ...invoiceData, totalSum: e.target.value })} />
+            </div>
+            <div className="field">
+              <label className="field-label">Proiect</label>
+              <select className="input" value={invoiceData.project} onChange={(e) => setInvoiceData({ ...invoiceData, project: e.target.value })}>
+                <option value="" disabled>Selecteaza un proiect</option>
                 {projects.map((project) => (
-                  <option key={project[0]} value={project[0]}>
-                    {project[1]}
-                  </option>
+                  <option key={project[0]} value={project[0]}>{project[1]}</option>
                 ))}
               </select>
-            </label>
+            </div>
+            <div className="field">
+              <label className="field-label">Data emitere</label>
+              <DatePicker selected={invoiceData.issueDate} onChange={(date) => setInvoiceData({ ...invoiceData, issueDate: date })} dateFormat="dd-MM-yyyy" />
+            </div>
+            <div className="field">
+              <label className="field-label">Data scadenta</label>
+              <DatePicker selected={invoiceData.paymentDate} onChange={(date) => setInvoiceData({ ...invoiceData, paymentDate: date })} dateFormat="dd-MM-yyyy" />
+            </div>
           </div>
-
-          <div className="invitm-div">
-            <label>
-              <b>Data emitere:</b>
-              <DatePicker
-                selected={invoiceData.issueDate}
-                onChange={(date) =>
-                  setInvoiceData({ ...invoiceData, issueDate: date })
-                }
-                dateFormat="dd-MM-yyyy"
-              />
-            </label>
-
-            <label>
-              <b>Data scadenta:</b>
-              <DatePicker
-                selected={invoiceData.paymentDate}
-                onChange={(date) =>
-                  setInvoiceData({ ...invoiceData, paymentDate: date })
-                }
-                dateFormat="dd-MM-yyyy"
-              />
-            </label>
+          <div className="actions-row">
+            <Button variant="primary" onClick={saveInvoiceChanges}>Salveaza</Button>
+            <Button variant="neutral" onClick={() => setIsEditing(false)}>Anuleaza</Button>
           </div>
-
-          <button onClick={saveInvoiceChanges} className="save-button mr">
-            Salveaza
-          </button>
-          <button onClick={() => setIsEditing(false)} className="save-button">
-            Anuleaza
-          </button>
-        </>
+        </Card>
       ) : (
-        <>
-          {/* View Mode */}
-          <div className="invitm-div">
-            <span className="view supplier-cell">
-              <b>Furnizor:</b> <span className="supplier-text-full">{supplierName}</span>
-            </span>
-            <span className="view">
-              <b>Numar factura:</b> {invoice.invoiceNo}
-            </span>
-            <span className="view">
-              <b>Proiect:</b> {invoice.projectName || "N/A"}
-            </span>
+        <Card className="invoice-card view-mode">
+          <div className="invoice-header-row">
+            <div className="info-block"><span className="label">Furnizor</span><span className="value supplier-text-full">{supplierName}</span></div>
+            <div className="info-block"><span className="label">Numar factura</span><span className="value">{invoice.invoiceNo}</span></div>
+            <div className="info-block"><span className="label">Proiect</span><span className="value">{invoice.projectName || 'N/A'}</span></div>
+            {invoice.status && (
+              <div className="info-block status-block">
+                <span className="label">Status</span>
+                <Badge variant={invoice.paid ? 'success' : invoice.status === 'Scadenta astazi' ? 'warning' : invoice.status === 'Scadenta depasita' ? 'danger' : 'info'}>
+                  {invoice.paid ? 'Platit' : invoice.status}
+                </Badge>
+              </div>
+            )}
           </div>
-          <div className="invitm-div">
-            <span className="view">
-              <b>Data emitere:</b>{" "}
-              {moment(invoiceData.issueDate).format("DD-MM-YYYY")}
-            </span>
-            <span className="view">
-              <b>Total initial:</b> {invoice.totalSum} LEI
-            </span>
-            <span className="view">
-              <b>Suma ramasa:</b> {invoice.remainingSum} LEI
-            </span>
-            <span className="view">
-              <b>Data scadenta:</b>{" "}
-              {moment(invoiceData.paymentDate).format("DD-MM-YYYY")}
-            </span>
+          <div className="invoice-metrics-row">
+            <div className="metric"><span className="label">Data emitere</span><span className="value">{moment(invoiceData.issueDate).format('DD-MM-YYYY')}</span></div>
+            <div className="metric"><span className="label">Total initial</span><span className="value">{invoice.totalSum} LEI</span></div>
+            <div className="metric"><span className="label">Suma ramasa</span><span className="value">{invoice.remainingSum} LEI</span></div>
+            <div className="metric"><span className="label">Data scadenta</span><span className="value">{moment(invoiceData.paymentDate).format('DD-MM-YYYY')}</span></div>
           </div>
-
-          <div className="payment-history-toggle">
-            <button onClick={togglePaymentHistory}>
-              {isHistoryVisible
-                ? "Ascunde Istoric Plati"
-                : "Arata Istoric Plati"}
-            </button>
+          <div className="history-toggle-row">
+            <Button variant="neutral" size="sm" onClick={togglePaymentHistory}>
+              {isHistoryVisible ? 'Ascunde Istoric Plati' : 'Arata Istoric Plati'}
+            </Button>
+            {!invoice.paid && (
+              <Button variant="primary" size="sm" onClick={openPaymentModal}>Am platit</Button>
+            )}
+            {invoice.status && deleteInvoice && (
+              <div className="icon-actions">
+                <EditIcon onClick={() => setIsEditing(true)} className="icon-btn" />
+                <DeleteIcon onClick={() => deleteInvoice(invoice.id)} className="icon-btn" />
+              </div>
+            )}
           </div>
-
           <div className={`payment-history-wrapper ${isHistoryVisible && invoiceData.paymentHistory.length > 0 ? 'open' : ''}`}>
             {isHistoryVisible && invoiceData.paymentHistory.length > 0 && (
               <div className="payment-history">
-                <b>Istoric plati:</b>
-                <ul>
-                  {invoiceData.paymentHistory.map((payment, index) => (
-                    <li key={index}>
-                      {moment(payment.date.toDate()).format("DD-MM-YYYY")}: {" "}
-                      <span className="payment-amount">{payment.amount} LEI</span>
-                      <button
-                        className="delete-payment-btn"
-                        onClick={() => deletePayment(payment, invoice.id)}
-                      >
-                        Sterge
-                      </button>
-                    </li>
-                  ))}
+                <div className="ph-summary-row">
+                  <b className="ph-title">Istoric plati</b>
+                  <div className="ph-progress">
+                    {(() => {
+                      const paidSoFar = invoiceData.paymentHistory.reduce((a,p)=> a + Number(p.amount),0);
+                      const total = Number(invoice.totalSum) || 0;
+                      const pct = total ? Math.min(100, (paidSoFar / total) * 100) : 0;
+                      return (
+                        <>
+                          <div className="ph-bar"><span style={{width: pct + '%'}} /></div>
+                          <span className="ph-paid-label">{paidSoFar.toFixed(2)} / {total.toFixed(2)} LEI</span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <ul className="ph-list">
+                  {invoiceData.paymentHistory
+                    .slice()
+                    .sort((a,b)=> b.date.toMillis() - a.date.toMillis())
+                    .map((payment, index) => (
+                      <li key={index} className="ph-item">
+                        <div className="ph-dot" />
+                        <div className="ph-meta">
+                          <span className="ph-date">{moment(payment.date.toDate()).format('DD-MM-YYYY')}</span>
+                          <span className="ph-amount">{payment.amount} LEI</span>
+                        </div>
+                        <Button variant="danger" size="xs" onClick={() => deletePayment(payment, invoice.id)}>Sterge</Button>
+                      </li>
+                    ))}
                 </ul>
               </div>
             )}
           </div>
-
-          <div className="delete-flex invitm-div">
-            {invoice.status && (
-              <div className="status-badge-wrapper">
-                <span className="status-label">Status</span>
-                <span
-                  className={`status-pill ${invoice.paid
-                    ? "pill-platit"
-                    : invoice.status.replace(/\s+/g, "-").toLowerCase()
-                    }`}
-                  aria-label={`Status factura: ${invoice.paid ? "Platit" : invoice.status}`}
-                >
-                  {invoice.paid ? "Platit" : invoice.status}
-                </span>
-              </div>
-            )}
-
-            <div className="tools invitm-div">
-              {!invoice.paid && (
-                <div className="paid-button" onClick={openPaymentModal}>
-                  Am platit
-                </div>
-              )}
-              {invoice.status && deleteInvoice && (
-                <div className="invitm-div">
-                  <EditIcon
-                    onClick={() => setIsEditing(true)}
-                    className="pointer"
-                  />
-                  {/* {invoice.paid && (
-                    <HistoryIcon
-                      onClick={() => markAsUnpaid(invoice.id)}
-                      className="pointer"
-                    />
-                  )} */}
-                  <DeleteIcon
-                    onClick={() => deleteInvoice(invoice.id)}
-                    className="pointer"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Modal for Payment */}
           <Modal
             isOpen={isPaymentModalOpen}
             onRequestClose={closePaymentModal}
-            className="payment-modal"
+            overlayClassName="modal-overlay"
+            className="app-modal"
             contentLabel="Introduceti suma platita"
           >
-            <h3>Introduceti suma platita</h3>
-            <p>
-              Suma ramasa: <b>{invoiceData.remainingSum} LEI</b>
-            </p>
-            <input
-              type="number"
-              value={paymentAmount}
-              onChange={handlePaymentAmountChange}
-              placeholder="Introduceti suma"
-              className="modal-input"
-            />
-            <button onClick={handleFullPayment} className="modal-auto-complete">
-              Plata completa ({invoiceData.remainingSum} LEI)
-            </button>
-            <div className="modal-actions">
-              <button onClick={submitPayment} className="modal-submit2">
-                Confirma Plata
-              </button>
-              <button onClick={closePaymentModal} className="modal-close">
-                Anuleaza
-              </button>
+            <div className="modal-header">
+              <h3 className="modal-title">Introduceti suma platita</h3>
+              <Button variant="ghost" size="sm" onClick={closePaymentModal}>✕</Button>
+            </div>
+            <div className="modal-body">
+              <p className="remaining-label">Suma ramasa: <b>{invoiceData.remainingSum} LEI</b></p>
+              <input type="number" value={paymentAmount} onChange={handlePaymentAmountChange} placeholder="Introduceti suma" className="input" />
+              <Button variant="outline" fullWidth onClick={handleFullPayment}>Plata completa ({invoiceData.remainingSum} LEI)</Button>
+            </div>
+            <div className="modal-footer">
+              <Button variant="primary" onClick={submitPayment}>Confirma Plata</Button>
+              <Button variant="danger" onClick={closePaymentModal}>Anuleaza</Button>
             </div>
           </Modal>
-        </>
+        </Card>
       )}
     </li>
   );

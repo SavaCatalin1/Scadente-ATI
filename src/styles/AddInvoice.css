@@ -1,98 +1,41 @@
-/* src/components/AddInvoiceModal.css */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Unified Add Invoice modal styles */
+.app-modal.wide { max-width:780px; }
+
+.add-invoice-form .form-grid { 
+  display:grid; 
+  gap:1rem 1.1rem; 
+  grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); 
+  align-items:start; 
+}
+.add-invoice-form .form-field { display:flex; flex-direction:column; gap:.4rem; }
+.add-invoice-form .form-span-2 { grid-column: 1 / -1; }
+.add-invoice-form .input-label { font-size:.66rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; opacity:.8; }
+.add-invoice-form .input, .add-invoice-form select, .add-invoice-form .date-picker { width:100%; }
+.add-invoice-form .react-datepicker-wrapper { width:100%; }
+.add-invoice-form .react-datepicker__input-container { width:100%; display:block; }
+.add-invoice-form .react-datepicker__input-container input { width:100%; box-sizing:border-box; }
+
+/* Prevent overlapping by enforcing min-heights and consistent grid auto-rows */
+.add-invoice-form .form-grid { grid-auto-rows: minmax(60px, auto); }
+.add-invoice-form .form-field { min-height:60px; }
+
+.modal-success-banner { background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; padding:.6rem .9rem; border-radius:12px; font-size:.75rem; font-weight:600; letter-spacing:.5px; box-shadow:0 4px 14px -4px rgba(0,0,0,.35); animation: fadeIn .35s ease; }
+
+html[data-theme='dark'] .modal-success-banner { box-shadow:0 6px 20px -6px rgba(0,0,0,.65); }
+
+.add-invoice-form .form-actions { margin-top: .2rem; display:flex; gap:.6rem; justify-content:flex-end; flex-wrap:wrap; }
+
+@media (max-width:720px){
+  .app-modal.wide { max-width:94vw; }
+  .add-invoice-form .form-grid { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:520px){
+  .add-invoice-form .form-grid { grid-template-columns:1fr; }
 }
 
-.modal-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 10px;
-  width: 500px;
-  position: relative;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+/* Light/Dark contrast adjustments */
+html[data-theme='dark'] .add-invoice-form .input, 
+html[data-theme='dark'] .add-invoice-form select,
+html[data-theme='dark'] .add-invoice-form .date-picker { background: var(--color-surface-alt); border-color: var(--color-border); color: var(--color-text); }
 
-.modal-title {
-  margin-bottom: 20px;
-  font-size: 22px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.modal-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-label {
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.modal-input {
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-}
-
-.modal-datepicker {
-  margin-bottom: 15px;
-  width: 95%;
-  max-width: 20rem;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-.modal-submit {
-  padding: 12px 20px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.modal-submit:hover {
-  background-color: #2980b9;
-}
-
-.modal-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.modal-close:hover {
-  background-color: #c0392b;
-}
-
-.success-message {
-  background-color: #28a745;
-  color: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  text-align: center;
-  font-weight: bold;
-  display: absolute;
-}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-4px);} to { opacity:1; transform:translateY(0);} }
